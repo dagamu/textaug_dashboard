@@ -6,8 +6,10 @@
     - streamlit-option-menu
     - pandas
     - scikit-learn
+    - scikit-multilearn
     - matplotlib
     - nltk
+    - neattext
     - nlpaug (*)
         
 ---
@@ -16,6 +18,7 @@
 python
 > import nltk
 > nltk.download('stopwords')
+> nltk.download('averaged_perceptron_tagger_eng')
 ```
 ```bash
 pip install -r requirements.txt
