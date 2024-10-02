@@ -1,6 +1,8 @@
 from math import trunc, log10, sqrt
 from textwrap import dedent
 import pandas as pd
+import streamlit as st
+from menu import menu
 
 def extract_labels( df, labels_column ):
     all_labels = {}
@@ -10,20 +12,20 @@ def extract_labels( df, labels_column ):
         
         for l in row_labels:
             if l in all_labels:
-                all_labels[l] += 1
+                all_labels[l]["count"] += 1
             else:
-                all_labels[l] = 1
+                all_labels[l] = { "label": l, "count": 1 }
     return all_labels
 
 def SummaryTab(st, all_labels):
         
-    max_ = max( all_labels, key=all_labels.get )
-    min_ = min( all_labels, key=all_labels.get )
+    max_ = max( list(all_labels.keys()), key=lambda k: all_labels[k]["count"] )
+    min_ = min( list(all_labels.keys()), key=lambda k: all_labels[k]["count"] )
     
-    data = pd.DataFrame( all_labels.items(), columns=["Label", "Frequency"] )
+    data = pd.DataFrame( [l.values() for l in all_labels.values()], columns=["Label", "Frequency", "Imbalance Ratio"] )
     data.sort_values(by="Frequency", inplace=True, ignore_index=True )
     
-    max_log10 = trunc( log10(all_labels[max_]) )
+    max_log10 = trunc( log10(all_labels[max_]["count"]) )
     data['Order'] = data.index.astype(str)
     data['Index + Label'] = data["Order"].str.zfill(max_log10) + ' ' + data['Label'].astype(str)
     
@@ -31,23 +33,27 @@ def SummaryTab(st, all_labels):
     
     info = f"""\n\
         - Unique Labels: { len(all_labels.keys())}\n
-        - More Occurrences: {max_} ({all_labels[max_]})\n
-        - Less Occurrences: {min_} ({all_labels[min_]})"""
+        - More Occurrences: {max_} ({all_labels[max_]["count"]})\n
+        - Less Occurrences: {min_} ({all_labels[min_]["count"]})"""
                 
     st.markdown(dedent(info))
     
 def BalaceTab(st, all_labels ):
-    labels_imbalance_ratio = {}
     
-    max_occurences = max( all_labels.values() )
-    for label, occurences in all_labels.items():
-        labels_imbalance_ratio[label] = max_occurences / occurences
+    max_occurences = max( [label["count"] for label in all_labels.values()] )
     
-    q = len(labels_imbalance_ratio)
-    MeanIR = sum(labels_imbalance_ratio.values()) / q
-    MaxIR = max( labels_imbalance_ratio.values() )
+    sum_IR = 0
+    MaxIR = 0
+    for label_data in all_labels.values():
+        value = max_occurences / label_data["count"]
+        all_labels[label_data["label"]]["imbalance_ratio"] = value
+        sum_IR += value
+        MaxIR = value if value > MaxIR else MaxIR
     
-    IRLbl_sigma = sqrt( sum( [ (l_count - MeanIR)**2/(q-1) for l_count in all_labels.values()] ) )
+    q = len(all_labels)
+    MeanIR = sum_IR / q
+    
+    IRLbl_sigma = sqrt( sum( [ (label["count"] - MeanIR)**2/(q-1) for label in all_labels.values()] ) )
     CVIR = IRLbl_sigma / MeanIR
     
     col1, col2, col3 = st.columns([1.5,1,1])
@@ -65,9 +71,13 @@ def BalaceTab(st, all_labels ):
         st.markdown(f"</br>**{MeanIR:.2f}**", unsafe_allow_html=True)
         st.markdown(f"</br>**{MaxIR:.2f}**", unsafe_allow_html=True)
         st.markdown(f"</br>**{CVIR:.2f}**", unsafe_allow_html=True)
+        
+def DataviewTab(st, all_labels):
+    labels_df = pd.DataFrame(all_labels.values())
+    st.table(labels_df)
 
 
-def LabelAnalysisPage(st):
+def LabelAnalysisPage():
     
     if not "df" in st.session_state:
         st.warning('There is no dataset :(')
@@ -83,18 +93,25 @@ def LabelAnalysisPage(st):
             if st.button("Extract Labels", type="primary" ):
                 labels_column = selected_column
                 st.session_state["labels_column"] = selected_column
-                st.session_state["all_labels"] = extract_labels(df, selected_column)
-                st.toast("Done!")
+                st.session_state["labels_data"] = extract_labels(df, selected_column)
     else:
         labels_column = st.session_state["labels_column"]
                 
+    if not "all_labels" in st.session_state:
+        st.session_state["labels_data"] = extract_labels(df, labels_column)
     
     if labels_column:    
-        sum_tab, balance_tab, dataview_tab = st.tabs(["Summary", "Balance Measures", "Dataview (*)"])     
-        all_labels = st.session_state["all_labels"]
+        sum_tab, balance_tab, dataview_tab = st.tabs(["Summary", "Balance Measures", "Dataview"])     
+        all_labels = st.session_state["labels_data"]
+            
+        with balance_tab:
+            BalaceTab( st, all_labels )
         
         with sum_tab:
             SummaryTab( st, all_labels )    
             
-        with balance_tab:
-            BalaceTab( st, all_labels )
+        with dataview_tab:
+            DataviewTab(st, all_labels)
+            
+LabelAnalysisPage()
+menu()

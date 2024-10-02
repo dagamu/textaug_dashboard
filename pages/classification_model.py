@@ -1,3 +1,6 @@
+import streamlit as st
+from menu import menu
+
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
@@ -24,17 +27,12 @@ AVAIBLE_MODELS = {
     "MLP NN": MLPClassifier,
 }
 
-def ClasificationModelPage(st):
+def ClasificationModelPage():
     if not "df" in st.session_state:
         st.warning('There is no dataset :(') 
         return 
-    
-    if not "all_labels" in st.session_state:
-        st.warning('Labels have not been proccesed yet :(') 
-        return 
             
     df = st.session_state["df"]
-    all_labels = st.session_state["all_labels"]
     labels_column = st.session_state["labels_column"]
     
     st.title("Classification Model")
@@ -68,3 +66,6 @@ def ClasificationModelPage(st):
            
             st.info(f"Train Split Performance: Accuracy {train_acc:.2f}%, Hamming Loss {train_hl:.3f}", icon="ℹ")
             st.info(f"Test Split Performance: Accuracy {test_acc:.2f}%, Hamming Loss {test_hl:.3f}", icon="ℹ")
+            
+ClasificationModelPage()
+menu()

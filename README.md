@@ -2,8 +2,7 @@
 ## Data Augmentation with LLMs for MLC Tasks
 
 - Requirements
-    - streamlit
-    - streamlit-option-menu
+    - streamlit==1.38.0
     - pandas
     - scikit-learn
     - scikit-multilearn
@@ -14,17 +13,19 @@
         
 ---
 
-```bash
+## Quick Start
+
+```console
 python
 > import nltk
 > nltk.download('stopwords')
 > nltk.download('averaged_perceptron_tagger_eng')
 ```
-```bash
+```console
 pip install -r requirements.txt
 pip install numpy requests nlpaug
 ```
 
 --- 
 
-run with `streamlit run dashboard_home.py` or `python -m streamlit run dashboard_home.py`
+run with `streamlit run dashboard.py` or `python -m streamlit run dashboard.py`

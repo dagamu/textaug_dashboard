@@ -1,13 +1,15 @@
 import random
 
 import pandas as pd
+import streamlit as st
+from menu import menu
 
 import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw
 import nlpaug.augmenter.sentence as nas
 
 from eda_nlpaug.edaug import EDAug
-from st_utils import row_elements
+from utils.st_utils import row_elements
 
 #from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
@@ -97,7 +99,7 @@ def EDATab(st):
     
     return augmenter
 
-def DataAugmentationPage(st):
+def DataAugmentationPage():
     
     if not "df" in st.session_state:
         st.warning('There is no dataset :(') 
@@ -154,11 +156,15 @@ def DataAugmentationPage(st):
                     aug_ready = True
                     concat_df = input_samples[["output_sample", labels_column]].rename(columns={ "output_sample": text_column })
                     st.session_state["df"] = pd.concat([df, concat_df ], axis=0 )
+                    st.session_state["labels_data"] = {}
             
             if aug_ready:        
                 st.table(input_samples)
                 
-"""
+DataAugmentationPage()
+menu()
+                
+_ = """
 st.subheader("Generate One Sample")
 
 col1, col2 = st.columns(2)
@@ -173,4 +179,4 @@ if st.button("Random Text"):
         
 if st.button("Generate Sample"):
         pass
-"""
+""";
