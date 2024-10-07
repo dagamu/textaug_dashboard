@@ -112,6 +112,7 @@ def LabelAnalysisPage():
             
         with dataview_tab:
             DataviewTab(st, all_labels)
-            
-LabelAnalysisPage()
-menu()
+   
+if __name__ == "__main__":          
+    LabelAnalysisPage()
+    menu()

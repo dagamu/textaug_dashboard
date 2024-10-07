@@ -66,6 +66,7 @@ def ClasificationModelPage():
            
             st.info(f"Train Split Performance: Accuracy {train_acc:.2f}%, Hamming Loss {train_hl:.3f}", icon="ℹ")
             st.info(f"Test Split Performance: Accuracy {test_acc:.2f}%, Hamming Loss {test_hl:.3f}", icon="ℹ")
-            
-ClasificationModelPage()
-menu()
+    
+if __name__ == "__main__":         
+    ClasificationModelPage()
+    menu()

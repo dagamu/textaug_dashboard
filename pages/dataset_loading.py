@@ -3,7 +3,7 @@ import importlib
 import requests 
 import os
 
-from utils.loading_presets import LOADING_PRESETS
+from utils import LOADING_PRESETS
 
 import streamlit as st
 from menu import menu
@@ -102,7 +102,8 @@ class HuggingFaceTab:
         st.subheader("Load a dataset from Hugging Face Datasets Module") 
         st.info("trust_remote_code is activated", icon="ℹ")
         
-        self.df_split = st.selectbox("Dataset Split", ["train", "validation", "test", "train+test", "train+test+validation"])
+        split_options = ["train", "validation", "test", "train+test", "train+test+validation"]
+        self.df_split = st.selectbox("Dataset Split", split_options)
         self.df_key = st.text_input("Dataset Name", placeholder="user/dataset", on_change=self.import_module )
         
         st.text("Common Examples: qanastek/HoC")
@@ -121,7 +122,7 @@ def UploadBtn(st, method, set_df):
         st.toast('Done!')
          
             
-def column_selection(st, method):
+def column_selection(method):
     columns = method.get_columns()
     if len(columns):
         text_col, label_col, drop_col =  st.columns([1, 1, 1.8])
@@ -146,10 +147,10 @@ def RenderPage(st, set_df):
         with tab:
             load_method = method()
             load_method.render(st)
-            column_selection( st, load_method )
+            column_selection(load_method)
             UploadBtn( st, load_method, set_df )
 
-def update_session_dataset( st, df, df_name, text_col, labels_col ):
+def update_session_dataset( df, df_name, text_col, labels_col ):
     st.session_state["df"] = df
     st.session_state["df_name"] = df_name
     st.session_state["text_col"] = text_col
@@ -166,7 +167,9 @@ def DatasetPage():
     if "df" in st.session_state:
         st.markdown(f"**Selected Dataset: {st.session_state['df_name']}**" )
         
-    RenderPage(st, lambda *args: update_session_dataset(st, *args))
+    RenderPage(st, update_session_dataset)
     
-DatasetPage()
-menu()
+    
+if __name__ == "__main__": 
+    DatasetPage()
+    menu()

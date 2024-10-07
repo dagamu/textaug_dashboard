@@ -1,0 +1,51 @@
+text,tags,mysql,python,php
+Flask-SQLAlchemy - When are the tables/databases created and destroyed?,"['python', 'mysql']",1,1.0,0.0
+Combining two PHP variables for MySQL query,"['php', 'mysql']",1,0.0,1.0
+'Counting' the number of records that match a certain criteria and displaying the numbers (using PHP and MySQL),"['php', 'mysql']",1,0.0,1.0
+Insert new row in a table and auto id number. Php and MySQL,"['php', 'mysql']",1,0.0,1.0
+Create Multiple MySQL tables using PHP,"['php', 'mysql']",1,0.0,1.0
+How to check only the first two letters from a mysql cell?,"['php', 'mysql']",1,0.0,1.0
+simple comment box php and mysql didn't work,"['php', 'mysql']",1,0.0,1.0
+Plotting Histogram: How can I do it from scratch using data stored in a database?,"['python', 'mysql']",1,1.0,0.0
+Handling PyMySql exceptions - Best Practices,"['python', 'mysql']",1,1.0,0.0
+Running php script that connects to mysql db in shell,"['php', 'mysql']",1,0.0,1.0
+Python mysql: Lost connection to MySQL server during query,"['python', 'mysql']",1,1.0,0.0
+Memory leak with large dataset when using mysql-python,"['python', 'mysql']",1,1.0,0.0
+automatically populate table with dummy data in mysql,"['python', 'mysql']",1,1.0,0.0
+Am i doing this wrong. Convert array to array value,"['php', 'mysql']",1,0.0,1.0
+Not enough arguments for format string Python-MySQL,"['python', 'mysql']",1,1.0,0.0
+"Operational Error(2003, ""Can't connect to MySQL server on '127.3.138.130' (111)"")","['python', 'mysql']",1,1.0,0.0
+(flask) python - mysql - using where clause in a select query with variable from URL,"['python', 'mysql']",1,1.0,0.0
+storing enum type variable into database,"['php', 'mysql']",1,0.0,1.0
+Drupal wont change the temporary file path in the database?,"['php', 'mysql']",1,0.0,1.0
+How can i change the language that says in phpMyAdmin in WAMP?,"['php', 'mysql']",1,0.0,1.0
+Create Database If Not Exists with PDO,"['php', 'mysql']",1,0.0,1.0
+"Python: tuple indices must be integers, not str when selecting from mysql table","['python', 'mysql']",1,1.0,0.0
+Getting multiple values of checkbox from a loop,"['php', 'mysql']",1,0.0,1.0
+creating primary key based on date,"['php', 'mysql']",1,0.0,1.0
+python mysql fetch query,"['python', 'mysql']",1,1.0,0.0
+MINUS operator in MySQL?,"['php', 'mysql']",1,0.0,1.0
+Hide / show list in PHP,"['php', 'mysql']",1,0.0,1.0
+Laravel: 1066 Not unique table/alias,"['php', 'mysql']",1,0.0,1.0
+Echo one image from mysql with next/prev button,"['php', 'mysql']",1,0.0,1.0
+Using PyMySQL with MariaDB,"['python', 'mysql']",1,1.0,0.0
+install python MySQLdb to python3 not python,"['python', 'mysql']",1,1.0,0.0
+PHP 5.3 Upgrade - Can't Connect to MySQL Server,"['php', 'mysql']",1,0.0,1.0
+PDO::fetch() LIMIT 1,"['php', 'mysql']",1,0.0,1.0
+"PHP (MySQL) error : ""Warning: mysql_num_rows() expects parameter 1 to be resource""","['php', 'mysql']",1,0.0,1.0
+Connect to RDS from EC2 instance with Python,"['python', 'mysql']",1,1.0,0.0
+Executing a MySQL query on command line via os.system in Python,"['python', 'mysql']",1,1.0,0.0
+"cakephp - building a query with a multi-word search string, searching multiple fields","['php', 'mysql']",1,0.0,1.0
+Join 3 table with doctrine 2 query builder,"['php', 'mysql']",1,0.0,1.0
+How to lock mysql tables in php,"['php', 'mysql']",1,0.0,1.0
+How can I pass an array of PDO parameters yet still specify their types?,"['php', 'mysql']",1,0.0,1.0
+Python and MySQLDB connection to another server on the network,"['python', 'mysql']",1,1.0,0.0
+"Python, MySQL and cursors that fetch maps","['python', 'mysql']",1,1.0,0.0
+how do I add a percentage increase to all product prices in Magento 1.4?,"['php', 'mysql']",1,0.0,1.0
+not all arguments converted during string formatting,"['python', 'mysql']",1,1.0,0.0
+Best Resource for mysql + python 2.6 programming,"['python', 'mysql']",1,1.0,0.0
+adding 2 1/2 hours to a time object in python,"['python', 'mysql']",1,1.0,0.0
+product website with php and mysql,"['php', 'mysql']",1,0.0,1.0
+UnicodeDecodeError: 'ascii' codec can't decode byte 0x96 in position 10: ordinal not in range(128),"['python', 'mysql']",1,1.0,0.0
+PHP mysql_query data size limit?,"['php', 'mysql']",1,0.0,1.0
+How can I use prepared statements combined with Transactions with PHP?,"['php', 'mysql']",1,0.0,1.0

@@ -12,34 +12,10 @@ import ast
 
 stop_words = set(stopwords.words('english'))
 
-class ReplaceAction:
-
-    name = "Value Replacing"
-        
-    def render(self, st, df):
-        st.subheader("Value Replacing")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            selected_column = st.selectbox("Select a Column", df.columns, index=None, key=self.name )
-            if selected_column:
-                if st.button("Replace"):
-                    selected_column = None
-                    selected_value = None
-                    fun = lambda value: new_value if value == selected_value else value
-                    df[selected_column] = df[selected_column].apply(fun)
-        
-        with col2:
-            if selected_column:
-                col = df[selected_column]
-                selected_value = st.selectbox("Select a value to replace", pd.unique(col), index=None )
-                
-        with col3:
-            if selected_column:      
-                new_value = st.text_input("New Value")
-
 class CustomFnAction:
 
     name = "Custom Text Processing"
+    btn_label = "Apply"
     stemmer = PorterStemmer()
     
     def data_processing(self, text):
@@ -56,53 +32,74 @@ class CustomFnAction:
         text = [self.stemmer.stem(word) for word in data]
         return text
         
-    def render(self, st, df):
-        st.subheader("Text Pre-processing")
-        selected_text_column = st.selectbox("Select a Column to apply function", df.columns, index=None, key="customfn" )
+    def apply_to(self, data):
+        data = data.apply(lambda x: self.data_processing(x))
+        data = data.apply(self.stemming)
         
-        if st.button("Apply"):
-            df[selected_text_column] = df[selected_text_column].apply(lambda x: self.data_processing(x) )
-            df = df.drop_duplicates(selected_text_column)
-            df[selected_text_column] = df[selected_text_column].apply(self.stemming)
+    def render(self, st):
+        st.subheader("Text Pre-processing")
 
         
 class NeatTextCleanAction:
 
     name = "NeatText Clean"
+    btn_label = "Clean"
+    
+    def apply_to(self, data ):
+        return data.apply(clean_text)
         
-    def render(self, st, df):
+    def render(self, st):
         st.subheader("Neattext Clean Text Function")
-        selected_text_column_nt = st.selectbox("Select a Column to apply function", df.columns, index=None, key="ntclean" )
-        if st.button("Clean Text"):
-            df[selected_text_column_nt] = df[selected_text_column_nt].apply( clean_text )
-            st.toast("Done! See Dataview page to see changes")
 
 class ListSplitAction:
 
     name = "List Split"
+    btn_label = "Split"
     
-    def split_char(self, df, col, char=','):
-        df[col] = df[col].str.split(char)
+    def split_char(self, col, char=','):
+        return col.str.split(char)
         
-    def literal_split(self, df, col):
-        df[col] = df[col].apply( ast.literal_eval )
+    def literal_split(self, col):
+        return col.apply( ast.literal_eval )
         
-    def render(self, st, df):
+    def apply_to(self, data):
+        return self.split_methods[self.selected_method](data)
+        
+    def render(self, st):
         st.info("Only list values in the format [ label1, label2, label3 ... ] will be accepted", icon="ℹ")
-        selected_text_column = st.selectbox("Select a Column to apply function", df.columns, index=None, key="list_split" )
         
-        split_methods = {
+        self.split_methods = {
             "Literal List": self.literal_split,
             "Separate by coma (,)": self.split_char,
             "Separante by semicolon (;)": lambda col: self.split_char(col, char=';')
         }
         
-        selected_method = st.selectbox("Select Method", split_methods.keys() )
-        if st.button("List Split"):
-            split_methods[selected_method]( df, selected_text_column )
+        self.selected_method = st.selectbox("Select Method", self.split_methods.keys() )
             
-TEXT_ACTIONS = [NeatTextCleanAction, ReplaceAction, CustomFnAction]
+TEXT_ACTIONS = [NeatTextCleanAction, CustomFnAction]
 LABELS_ACTIONS = [ListSplitAction]
+
+def applyBtn(st, cols, action, set_action):
+    _id = action.name
+    if len(cols) > 1:
+        selected_col = st.selectbox("Select a Column to apply function", cols, index=None, key=_id )
+    else:
+        selected_col = cols[0]
+        
+    if st.button(action.btn_label, key=_id+'btn' ):
+        set_action(action, selected_col)
+        
+def RenderPage(st, cols, set_action):
+    preprocessing_actions = [ action() for action in [ *LABELS_ACTIONS, *TEXT_ACTIONS ] ] 
+    action_labels = [ action.name for action in preprocessing_actions ]
+    for action, tab, in zip( preprocessing_actions, st.tabs(action_labels) ):
+        with tab:
+            action.render(st)
+            applyBtn( st, cols, action, set_action)
+    
+def set_method_session(method, col):
+    df = st.session_state["df"]
+    df[col] = method.apply_to(df[col])
 
 def TextProcessingPage():
     if not "df" in st.session_state:
@@ -111,12 +108,8 @@ def TextProcessingPage():
     df = st.session_state["df"]
     
     st.title("Text Pre-processing")
-    
-    preprocessing_actions = [ action() for action in [ *LABELS_ACTIONS, *TEXT_ACTIONS ] ] 
-    action_labels = [ action.name for action in preprocessing_actions ]
-    for action, tab, in zip( preprocessing_actions, st.tabs(action_labels) ):
-        with tab:
-            action.render(st, df)
-            
-TextProcessingPage()
-menu()
+    RenderPage(st, df.columns, set_method_session)
+     
+if __name__ == "__main__":     
+    TextProcessingPage()
+    menu()

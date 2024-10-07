@@ -4,100 +4,115 @@ import pandas as pd
 import streamlit as st
 from menu import menu
 
-import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw
 import nlpaug.augmenter.sentence as nas
 
-from eda_nlpaug.edaug import EDAug
-from utils.st_utils import row_elements
+from data_aug.eda_nlpaug import EDAug
+from data_aug.char_aug import CharAugmenter
+
+from utils import row_elements
 
 #from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-# https://nlpaug.readthedocs.io/en/latest/augmenter/augmenter.html
+# https://nlpaug.readthedocs.io/en/latest/augmenter/augmenter.html  
 
-CHAR_METHODS = { 
-            "OCR":      ( nac.OcrAug, {} ),
-            "Keyboard": ( nac.KeyboardAug, {} ),
-            "Random":   ( nac.RandomCharAug, {} )
-}
-
-def CharAugTab(st):
-    method = st.selectbox("Method", CHAR_METHODS.keys() )
+class WordAugmenter:
     
-    if method == "OCR":
-        aug_word_min, aug_word_max = st.slider("Select a how many words would be modified", 0, 20, (1, 10))   
-        additional_params = { "aug_word_min": aug_word_min, "aug_word_max": aug_word_max }
+    name = "Word Augmenter"
     
-    elif method == "Random":
-        aug_word_min, aug_word_max = st.slider("Select a how many words would be modified", 0, 20, (1, 10))   
-        action = st.selectbox("Select Action", ["insert", "substitute", "swap", "delete"])
-        
-        upper_char = st.checkbox("Include uppercase characters")
-        num_char = st.checkbox("Include numeric characters")
-
-        additional_params = { 
-                    "action": action,
-                    "aug_word_min": aug_word_min,
-                    "aug_word_max": aug_word_max,
-                    "include_numeric": upper_char,
-                    "include_upper_case": num_char,
-        }
+    def render(self, st):
+        st.warning("Not avaible yet")
+        return None
     
-    elif method == "Keyboard":
-        aug_word_min, aug_word_max = st.slider("Select a how many words would be modified", 0, 20, (1, 10))   
-        
-        special_char = st.checkbox("Include special characters")
-        upper_char = st.checkbox("Include uppercase characters")
-        num_char = st.checkbox("Include numeric characters")
-
-        additional_params = { 
-                    "aug_word_min": aug_word_min,
-                    "aug_word_max": aug_word_max,
-                    "include_special_char": special_char,
-                    "include_numeric": upper_char,
-                    "include_upper_case": num_char,
-        }
-        
-    if method:
-        augmenter_class, initial_params = CHAR_METHODS[method]
-        augmenter = augmenter_class( **initial_params, **additional_params ) 
-        return augmenter
-
-    return None
+class SentenceAugmenter:
     
-
-def WordAugTab(st):
-    st.warning("Not avaible yet")
-    return None
-
-def generate_text(model, tokenizer, inital_text, n_words = 20 ):
-    input_ids = tokenizer.encode(inital_text, return_tensors='pt')
-    output = model.generate(input_ids, max_length=len(input_ids[0]) + n_words, num_return_sequences=1)
-    return tokenizer.decode(output[0], skip_special_tokens=True)
-
-def SentenceAugTab(st):
-    st.warning("Not avaible yet")
-    return None
-    llm_model = st.selectbox("Select Model", ["GPT2"])
-    if llm_model == "GPT2":
-        if st.button("Apply Augmentation", key="sentenceaug"):
-            #tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-            #model = GPT2LMHeadModel.from_pretrained("gpt2", pad_token_id=tokenizer.eos_token_id)
-            labels_colum = st.session_state["labels_column"]
-            prompt = f"{df[labels_colum][0]} {df[text_column][0]} "
-            st.text(prompt)
+    name = "Sentence Augmenter"
+    
+    def generate_text(model, tokenizer, inital_text, n_words = 20 ):
+        input_ids = tokenizer.encode(inital_text, return_tensors='pt')
+        output = model.generate(input_ids, max_length=len(input_ids[0]) + n_words, num_return_sequences=1)
+        return tokenizer.decode(output[0], skip_special_tokens=True)
+    
+    def render(self, st):
+        st.warning("Not avaible yet")
+        return None
+        llm_model = st.selectbox("Select Model", ["GPT2"])
+        if llm_model == "GPT2":
+            if st.button("Apply Augmentation", key="sentenceaug"):
+                #tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+                #model = GPT2LMHeadModel.from_pretrained("gpt2", pad_token_id=tokenizer.eos_token_id)
+                labels_colum = st.session_state["labels_column"]
+                prompt = f"{df[labels_colum][0]} {df[text_column][0]} "
+                st.text(prompt)
             #output = generate_text( model, tokenizer, )
         
-def EDATab(st):
-    st.text("Weights of Easy Augmentation Methods")
-    eda_labels = [ "Synonym Replacement (SR)", "Random Insertion (RI)", "Random Swap (RS)", "Random Deletion (RD)" ]
-    eda_weights = row_elements( st,
-                 [ { "params": {"label": label}, "el": st.number_input } for label in eda_labels ],
-                 common_params={"value":1, "min_value":0})
-        
-    augmenter = EDAug(p_weights=eda_weights)
+class EDAaugmenter:
     
-    return augmenter
+    name = "EDA Augmenter"
+    
+    eda_labels = [
+        "Synonym Replacement (SR)",
+        "Random Insertion (RI)",
+        "Random Swap (RS)",
+        "Random Deletion (RD)"
+    ]
+    
+    def render(self, st):
+        st.text("Weights of Easy Augmentation Methods")
+        
+        weights_items = [ { "params": {"label": label}, "el": st.number_input } for label in self.eda_labels ]
+        common_params = {"value":1, "min_value":0 }
+        eda_weights = row_elements( st, weights_items, common_params=common_params)
+            
+        self.augmenter = EDAug(p_weights=eda_weights)
+    
+def SetupAugmenter(aug_method, set_method, unique_df):
+    
+    if "augmenter" not in vars(aug_method):
+        return
+    
+    col1, col2, col3 = st.columns(3)
+    
+    _id = aug_method.name
+    count_or_ratio = col1.selectbox("Samples to add", ["Count", "Ratio"], key=_id+'cr')
+    
+    if count_or_ratio == "Count":
+        nsamples_count = col2.number_input("N° of samples to add", value=100, min_value=0, key=_id+'c')
+        aug_method.calc_n_samples = lambda n: nsamples_count
+    elif count_or_ratio == "Ratio":
+        nsamples_ratio = col2.number_input("Ratio of samples to add", value=1.1, min_value=1.0, key=_id+'r')
+        aug_method.calc_n_samples = lambda n: round( (nsamples_ratio-1)*n )
+
+    if count_or_ratio == "Ratio" and unique_df and "df" in st.session_state:
+        df = st.session_state["df"]
+        nsamples_count = round( (nsamples_ratio - 1)*len(df) )
+        
+    if unique_df:
+        aug_method_info = f"{aug_method.name} - {nsamples_count}"
+        col3.write(aug_method_info)
+    else:
+        col3.write(aug_method.name)
+    
+    if col3.button("Initialize", key=_id+'i'):
+        aug_method.params = { "n_input_samples": nsamples_count } if unique_df else {}
+        set_method(aug_method)
+
+
+def RenderPage(st, set_method, unique_df=True):
+    
+    methods = { 
+        "Character Augmenter":      CharAugmenter,
+        "Easy Data Augmentation":   EDAaugmenter,
+        "Word Augmenter (*)":       WordAugmenter,
+        "Sentecence Augmenter (*)": SentenceAugmenter
+    }
+    
+    for tab, augmenter in zip( st.tabs(methods.keys()), methods.values() ):
+        with tab:
+            method_instance = augmenter()
+            method_instance.render(st)
+            SetupAugmenter(method_instance, set_method, unique_df)
+                
 
 def DataAugmentationPage():
     
@@ -111,72 +126,26 @@ def DataAugmentationPage():
     
     text_column = st.selectbox("Select Text Column", df.columns, index=None )
     if text_column:
-        
-        tabs = { 
-            "Character Augmenter":      CharAugTab,
-            "Easy Data Augmentation":   EDATab,
-            "Word Augmenter (*)":       WordAugTab,
-            "Sentecence Augmenter (*)": SentenceAugTab
-        }
-
-        aug_method = None
-        
-        for tab, fn in zip( st.tabs(tabs.keys()), tabs.values() ):
-            with tab:
-                selected_aug_method = fn(st)
-                if selected_aug_method != None:
-                    aug_method = selected_aug_method
+                
+        augmenter = { "method": None }
+        def set_aug_method(method):
+            augmenter["method"] = method
+            pool = df[[text_column, labels_column]].rename(columns={text_column: "input_sample" })
+            input_samples = random.choices( pool.to_dict("records"), k=augmenter["method"].params["n_input_samples"] )
+            input_samples = pd.DataFrame(input_samples, columns=["input_sample", labels_column])
+            augmented_samples = augmenter["method"].augment( list(input_samples["input_sample"].values) )
+            input_samples["output_sample"] = augmented_samples
+            concat_df = input_samples[["output_sample", labels_column]].rename(columns={ "output_sample": text_column })
+            st.session_state["df"] = pd.concat([df, concat_df ], axis=0 )
+            st.session_state["labels_data"] = {}
+            st.table(input_samples)
+            
+        RenderPage(st, set_aug_method)
+       
                     
-        if aug_method:
-            
-            col1, col2, col3 = st.columns(3)
-    
-            aug_ready = False
-    
-            with col1:
-                count_or_ratio = st.selectbox("Samples to add", ["Count", "Ratio"])
-            
-            with col2:
-                if count_or_ratio == "Count":
-                    new_samples_count = st.number_input("Number of samples to add", value=100, min_value=0)
-                elif count_or_ratio == "Ratio":
-                    new_samples_ratio = st.number_input("Ratio of samples to add", value=1.1, min_value=1.0)
-                    
-            with col3:
-                n_input_samples = new_samples_count if count_or_ratio == "Count" else round( (new_samples_ratio - 1)*len(df) )
-                aug_method_info = f"{aug_method.name} - {n_input_samples}"
-                st.caption(aug_method_info)
                 
-                if st.button("Generate Augmentation"):
-                    pool = df[[text_column, labels_column]].rename(columns={text_column: "input_sample" })
-                    input_samples = random.choices( pool.to_dict("records"), k=n_input_samples )
-                    input_samples = pd.DataFrame(input_samples, columns=["input_sample", labels_column])
-                    augmented_samples = aug_method.augment( list(input_samples["input_sample"].values) )
-                    input_samples["output_sample"] = augmented_samples
-                    aug_ready = True
-                    concat_df = input_samples[["output_sample", labels_column]].rename(columns={ "output_sample": text_column })
-                    st.session_state["df"] = pd.concat([df, concat_df ], axis=0 )
-                    st.session_state["labels_data"] = {}
-            
-            if aug_ready:        
-                st.table(input_samples)
-                
-DataAugmentationPage()
-menu()
-                
-_ = """
-st.subheader("Generate One Sample")
-
-col1, col2 = st.columns(2)
-text_param = ""
-with col1:
-    st.text_input("Original Text", value=text_param)
-with col2:
-    count_or_ratio = st.selectbox("EDA Method", ["SR", "RI", "RS", "RD"])
-    
-if st.button("Random Text"):
-        text_param = random.choice( df[text_column] )
-        
-if st.button("Generate Sample"):
-        pass
-""";
+DATA_AUGMENTATION_METHODS = [EDAaugmenter, CharAugmenter]
+       
+if __name__ == "__main__":          
+    DataAugmentationPage()
+    menu()

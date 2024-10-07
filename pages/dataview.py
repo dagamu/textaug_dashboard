@@ -29,6 +29,7 @@ def DataviewPage():
         ax.hist( df[text_col].str.len() )
         fig.set_figheight(2.4)
         st.pyplot(fig, use_container_width=True)
-        
-DataviewPage()
-menu()
+ 
+if __name__ == "__main__":        
+    DataviewPage()
+    menu()
