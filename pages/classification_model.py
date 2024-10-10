@@ -28,8 +28,8 @@ PROBLEM_TRANSFORM_METHODS = {
 
 AVAIBLE_MODELS = {
     "Multinomial Naive Bayes": (MultinomialNB, {}),
+    "MLP NN": (MLPClassifier, { "max_iter": 500, "verbose": False }),
     #"SVM Classifier": SVC,
-    "MLP NN": (MLPClassifier, {"max-max_iter": 200}),
 }
 
 def get_performance( clf, preprocessing,  X, y ):
@@ -43,7 +43,7 @@ def train_model(vectorizer, multi_model, preprocessing, base_model, X, y ):
         
     base_vec = CountVectorizer()
     X_features = base_vec.fit_transform(X)
-    y_features = preprocessing.fit_transform(y)
+    y_features = preprocessing.transform(y)
         
     if not isinstance(vectorizer, CountVectorizer):
         base_clf = Pipeline(
@@ -84,10 +84,15 @@ def ClasificationModelPage():
     if pt_method and vec_method and selected_model: 
         if st.button("Train", type="primary"):
             
-            X_train, X_test, y_train, y_test = train_test_split( df[samples_column].values, df[labels_column].values, test_size=0.3, random_state=42 )
+            X_features = df[samples_column].values
+            y_features =  df[labels_column].values
             
             multi_model, preprocessing = PROBLEM_TRANSFORM_METHODS[ str(pt_method) ].values()
             preprocessing = preprocessing()
+            preprocessing.fit(y_features)
+            
+            X_train, X_test, y_train, y_test = train_test_split( X_features, y_features, test_size=0.3, random_state=42 )
+            
             base_model, model_params = AVAIBLE_MODELS[ str(selected_model) ]
             base_model = base_model(**model_params)
             

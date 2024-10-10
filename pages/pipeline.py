@@ -44,6 +44,9 @@ def PipelineRun(datasets, vec_methods, pt_methods, models, aug_methods):
                     
                     base_model, model_params = AVAIBLE_MODELS[ str(model) ]
                     base_model = base_model(**model_params)
+                    
+                    preprocessing.fit(labels_col)
+                    
                     X_train, X_test, y_train, y_test = train_test_split( txt_col, labels_col, test_size=0.3, random_state=42 )
                     
                     clf = train_model(vectorizer, multi_model, preprocessing, base_model, X_train, y_train )
