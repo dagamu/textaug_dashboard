@@ -76,8 +76,7 @@ class ListSplitAction:
         
         self.selected_method = st.selectbox("Select Method", self.split_methods.keys() )
             
-TEXT_ACTIONS = [NeatTextCleanAction, CustomFnAction]
-LABELS_ACTIONS = [ListSplitAction]
+PREPROC_ACTIONS = [ListSplitAction, NeatTextCleanAction, CustomFnAction ]
 
 def applyBtn(st, cols, action, set_action):
     _id = action.name
@@ -90,7 +89,7 @@ def applyBtn(st, cols, action, set_action):
         set_action(action, selected_col)
         
 def RenderPage(st, cols, set_action):
-    preprocessing_actions = [ action() for action in [ *LABELS_ACTIONS, *TEXT_ACTIONS ] ] 
+    preprocessing_actions = [ action() for action in PREPROC_ACTIONS ]
     action_labels = [ action.name for action in preprocessing_actions ]
     for action, tab, in zip( preprocessing_actions, st.tabs(action_labels) ):
         with tab:

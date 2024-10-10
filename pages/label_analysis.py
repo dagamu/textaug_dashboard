@@ -6,15 +6,16 @@ from menu import menu
 
 def extract_labels( df, labels_column ):
     all_labels = {}
-    for _, row in df.iterrows():
+    for i, row in df.iterrows():
         labels_text = row[labels_column]
         row_labels = labels_text
         
-        for l in row_labels:
-            if l in all_labels:
-                all_labels[l]["count"] += 1
-            else:
-                all_labels[l] = { "label": l, "count": 1 }
+        if type(row_labels) == list:
+            for l in row_labels:
+                if l in all_labels:
+                    all_labels[l]["count"] += 1
+                else:
+                    all_labels[l] = { "label": l, "count": 1 }
     return all_labels
 
 def SummaryTab(st, all_labels):

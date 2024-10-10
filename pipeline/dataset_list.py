@@ -48,7 +48,7 @@ class DatasetList:
                     dataset["text_proc_action"] = fn
                 elif col == dataset["labels_column"]:
                     dataset["labels_proc_action"] = fn
-        st.toast(f"{df_name, fn.name, col}")
+                    
         st.session_state["pipeline_datasets"] = self 
         st.rerun()
                     
@@ -96,11 +96,12 @@ class DatasetList:
         if dataset["labels_proc_action"] != None:
             labels_action_name = dataset["labels_proc_action"].name
 
+        proc_col.container(height=9, border=False )
         
         if proc_col.button(f"{txt_action_name} | ✏", key=f"TCF-{dataset['name']}"):
             self.proc_action_diag(dataset['name'], selected_text_col)
             
-        proc_col.caption("_")
+        proc_col.container(height=10, border=False )
         
         if proc_col.button(f"{labels_action_name} | ✏", key=f"LCF-{dataset['name']}"):
             self.proc_action_diag(dataset['name'], selected_labels_col)

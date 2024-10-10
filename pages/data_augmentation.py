@@ -65,6 +65,25 @@ class EDAaugmenter:
         eda_weights = row_elements( st, weights_items, common_params=common_params)
             
         self.augmenter = EDAug(p_weights=eda_weights)
+        
+def AugmentDataframe(df, text_col, labels_col, aug_method ):
+
+    calc_samples = aug_method.calc_n_samples
+    augmenter = aug_method.augmenter
+    
+    n_samples = calc_samples(len(df))
+    
+    df_dict = df[[text_col, labels_col]].to_dict("records")
+    input_samples = random.choices( df_dict, k=n_samples )
+    input_samples = pd.DataFrame( input_samples )
+    input_samples = input_samples.rename( columns={ text_col: "input_sample" } )
+    
+    augmented_samples = augmenter.augment( list(input_samples["input_sample"].values) )
+    input_samples["output_sample"] = augmented_samples
+    
+    new_samples = input_samples[["output_sample", labels_col]].rename(columns={ "output_sample": text_col })
+    df = pd.concat([df, new_samples ], axis=0 )
+    return df, input_samples
     
 def SetupAugmenter(aug_method, set_method, unique_df):
     
@@ -89,11 +108,14 @@ def SetupAugmenter(aug_method, set_method, unique_df):
         
     if unique_df:
         aug_method_info = f"{aug_method.name} - {nsamples_count}"
-        col3.write(aug_method_info)
+        col3.caption(aug_method_info)
+        btn_label = "Run"
     else:
-        col3.write(aug_method.name)
+        col3.caption(aug_method.name)
+        btn_label = "Initialize"
+
     
-    if col3.button("Initialize", key=_id+'i'):
+    if col3.button(btn_label, key=_id+'i'):
         aug_method.params = { "n_input_samples": nsamples_count } if unique_df else {}
         set_method(aug_method)
 
@@ -124,27 +146,18 @@ def DataAugmentationPage():
     st.title("Data Augmentation")
     labels_column = st.session_state["labels_column"]
     
-    text_column = st.selectbox("Select Text Column", df.columns, index=None )
+    text_column = st.selectbox("Select Text Column", df.columns, index=0 )
     if text_column:
                 
         augmenter = { "method": None }
         def set_aug_method(method):
             augmenter["method"] = method
-            pool = df[[text_column, labels_column]].rename(columns={text_column: "input_sample" })
-            input_samples = random.choices( pool.to_dict("records"), k=augmenter["method"].params["n_input_samples"] )
-            input_samples = pd.DataFrame(input_samples, columns=["input_sample", labels_column])
-            augmented_samples = augmenter["method"].augment( list(input_samples["input_sample"].values) )
-            input_samples["output_sample"] = augmented_samples
-            concat_df = input_samples[["output_sample", labels_column]].rename(columns={ "output_sample": text_column })
-            st.session_state["df"] = pd.concat([df, concat_df ], axis=0 )
-            st.session_state["labels_data"] = {}
-            st.table(input_samples)
+            new_df, df_aug = AugmentDataframe(df, text_column, labels_column, method )
+            st.table(df_aug)
+            st.session_state["df"] = new_df
+            st.toast(len(df))
             
         RenderPage(st, set_aug_method)
-       
-                    
-                
-DATA_AUGMENTATION_METHODS = [EDAaugmenter, CharAugmenter]
        
 if __name__ == "__main__":          
     DataAugmentationPage()

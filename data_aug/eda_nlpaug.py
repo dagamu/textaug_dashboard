@@ -16,12 +16,18 @@ class RandomSynonymInsertion:
         words = text.split(" ")
         
         lemmas = []
-        while not lemmas:
+        i = 0 
+        while not lemmas and i < 50:
             selected_word = choice(words, 1)[0]
             synonyms = wordnet.synsets(selected_word)
             lemmas = list(set(chain.from_iterable([w.lemma_names() for w in synonyms])))
+            i += 1
      
-        selected_synonym = choice(lemmas, 1)[0]
+        if len(lemmas):
+            selected_synonym = choice(lemmas, 1)[0]
+        else: 
+            selected_synonym = selected_word
+            
         words.insert( randint(0,len(words)), selected_synonym )
         return [" ".join(words)]
     
