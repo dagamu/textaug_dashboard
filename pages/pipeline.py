@@ -2,10 +2,8 @@ import streamlit as st
 from menu import menu
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, hamming_loss
 import pandas as pd
 
-import random
 import time
 
 from pages.classification_model import VECTORIZER_METHODS, PROBLEM_TRANSFORM_METHODS, AVAIBLE_MODELS

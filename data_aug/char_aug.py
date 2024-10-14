@@ -4,6 +4,7 @@ import nlpaug.augmenter.char as nac
 class CharAugmenter:
     
     name = "Character Augmenter"
+    # TODO: Make Shorter Labels 
     
     CHAR_METHODS = { 
         "OCR":      ( nac.OcrAug, {} ),

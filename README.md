@@ -16,14 +16,15 @@
 ## Quick Start
 
 ```console
+$ pip install -r requirements.txt
+$ pip install numpy requests nlpaug
+```
+
+```console
 $ python
 $ import nltk
 $ nltk.download('stopwords')
 $ nltk.download('averaged_perceptron_tagger_eng')
-```
-```console
-$ pip install -r requirements.txt
-$ pip install numpy requests nlpaug
 ```
 
 --- 

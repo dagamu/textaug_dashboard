@@ -32,6 +32,9 @@ class RandomSynonymInsertion:
         return [" ".join(words)]
     
 class EDAug:
+    
+    # TODO: Return or save methods of augmentation to show in table
+    
     def __init__(self, p_weights = [1,1,1,1], lexical_src='wordnet', lang="eng", stopwords=None, additional_params={}, name="Easy Data Augmentation" ):
         
         additional_params = {**INITIAL_ADDITIONAL_PARAMS, **additional_params}

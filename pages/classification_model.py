@@ -11,13 +11,13 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, hamming_loss, f1_score
+from sklearn.metrics import accuracy_score, hamming_loss, f1_score # TODO: Add more performance metrics
 from skmultilearn.problem_transform import BinaryRelevance #, LabelPowerset, ClassifierChains  
 
 VECTORIZER_METHODS = {
     "Term Frequency (Count Vectorizer)": CountVectorizer,
     "TF-IDF": TfidfTransformer,
-    #"TF-MuRLF": TfmurlfVectorizer
+    #"TF-muRLF": TfmurlfVectorizer
 }
 
 PROBLEM_TRANSFORM_METHODS = {
@@ -32,38 +32,33 @@ AVAIBLE_MODELS = {
     #"SVM Classifier": SVC,
 }
 
+def lwise_accuracy(y, y_pred):
+    acc = y == y_pred
+    acc = np.mean(acc, axis=1)
+    return np.mean(acc)
+
 def get_performance( clf, preprocessing,  X, y ):
     y_features = preprocessing.transform(y)
     return {
-        "acc": accuracy_score(y_features , clf.predict(X) ),
+        "acc": lwise_accuracy(y_features , clf.predict(X) ),
         "hl": hamming_loss(y_features , clf.predict(X) )
     }
 
 def train_model(vectorizer, multi_model, preprocessing, base_model, X, y ):
         
     base_vec = CountVectorizer()
-    X_features = base_vec.fit_transform(X)
     y_features = preprocessing.transform(y)
         
+    base_clf = base_model
     if not isinstance(vectorizer, CountVectorizer):
-        base_clf = Pipeline(
-            steps = [
-                ('vectorizer', vectorizer ),
-                ('clf', base_model) 
-            ]
-        )
-    else:
-        base_clf = base_model
+        base_clf = Pipeline([   ('vectorizer', vectorizer ),
+                                ('clf', base_model) ])
     
-    clf = Pipeline( 
-        steps=[ 
-            ("base_vec", base_vec ),
-            ("multi_clf", multi_model(base_clf) )
-        ]
-    )
-
+    
+    clf = Pipeline([    ("base_vec", base_vec ),
+                        ("multi_clf", multi_model(base_clf) ) ])
     clf.fit(X, y_features)
-    
+        
     return clf
 
 def ClasificationModelPage():
@@ -104,7 +99,7 @@ def ClasificationModelPage():
             test_per = get_performance( clf, preprocessing, X_test, y_test )
             
             st.info(f"Train Split Performance: Accuracy {train_per['acc']*100:.2f}%, Hamming Loss {train_per['hl']:.3f}", icon="ℹ")
-            st.info(f"Test Split Performance: Accuracy {test_per['hl']:.2f}%, Hamming Loss {train_per['hl']:.3f}", icon="ℹ")
+            st.info(f"Test Split Performance: Accuracy {test_per['acc']*100:.2f}%, Hamming Loss {train_per['hl']:.3f}", icon="ℹ")
     
 if __name__ == "__main__":         
     ClasificationModelPage()

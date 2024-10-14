@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from menu import menu
 
+# TODO: Mak filter views
+
 def DataviewPage():
     if not "df" in st.session_state:
         st.warning('There is no dataset :(')

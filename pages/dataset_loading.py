@@ -8,6 +8,8 @@ from utils import LOADING_PRESETS
 import streamlit as st
 from menu import menu
 
+# TODO: Make option to load binarized labels 
+
 class FileTab:
     def __init__(self):
         self.name = "FileUpload"
