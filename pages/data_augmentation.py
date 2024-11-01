@@ -1,6 +1,7 @@
 import random
 
 import pandas as pd
+import numpy as np
 import streamlit as st
 from menu import menu
 
@@ -9,6 +10,10 @@ import nlpaug.augmenter.sentence as nas
 
 from data_aug.eda_nlpaug import EDAug
 from data_aug.char_aug import CharAugmenter
+
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from label_dependent_rpr.tfmurlf import TfmurlfTransformer
+from sklearn.preprocessing import MultiLabelBinarizer
 
 from utils import row_elements
 
@@ -66,15 +71,49 @@ class EDAaugmenter:
             
         self.augmenter = EDAug(p_weights=eda_weights)
         
-def AugmentDataframe(df, text_col, labels_col, aug_method ):
+def calcSelectionWeights( text_col, labels_col, selection_method ):
+    
+    weights = np.ones( len(text_col) )
+    if selection_method == "Random":
+        weights = np.ones( len(text_col) )
+    
+    base_vec = CountVectorizer().fit_transform(text_col).toarray()
+    
+    if selection_method == "TF-IDF":
+        vectorized = TfidfTransformer().fit_transform(base_vec)
+        weights = np.sum( vectorized.toarray(), axis=1)
+
+    if selection_method == "TF-muRFL":
+        
+        y_features = MultiLabelBinarizer().fit_transform(labels_col)
+        labels_freq = np.sum(y_features, axis=0)
+        irl_bl = np.max(labels_freq) / labels_freq 
+        
+        weights = np.zeros( len(text_col) )
+        TF_muRLF_transformer = TfmurlfTransformer()
+        TF_muRLF_transformer.setup(base_vec, y_features)
+        
+        weights = np.zeros( len(text_col) )
+        for label_index, label_imbalance_ratio in enumerate(irl_bl):
+            vectorized = TF_muRLF_transformer.fit_transform(base_vec, y_features[:, label_index] )
+            weights += np.sum(vectorized, axis=1) * label_imbalance_ratio
+    
+    return np.squeeze( np.squeeze(weights) / np.sum(weights) )
+        
+        
+def AugmentDataframe(df, text_col, labels_col, aug_method, selection_method="Random" ):
 
     calc_samples = aug_method.calc_n_samples
     augmenter = aug_method.augmenter
     
-    n_samples = calc_samples(len(df))
+    n_samples = calc_samples( len(df) )
+    if n_samples == 0:
+        return df, []
     
     df_dict = df[[text_col, labels_col]].to_dict("records")
-    input_samples = random.choices( df_dict, k=n_samples )
+    
+    weights = calcSelectionWeights( df[text_col], df[labels_col], selection_method )
+    input_samples = np.random.choice( df_dict, n_samples, p=weights ).tolist()
     input_samples = pd.DataFrame( input_samples )
     input_samples = input_samples.rename( columns={ text_col: "input_sample" } )
     
@@ -119,8 +158,7 @@ def SetupAugmenter(aug_method, set_method, unique_df):
         aug_method.params = { "n_input_samples": nsamples_count } if unique_df else {}
         set_method(aug_method)
 
-
-def RenderPage(st, set_method, unique_df=True):
+def RenderPage(st, setup_aug, unique_df=True):
     
     methods = { 
         "Character Augmenter":      CharAugmenter,
@@ -133,8 +171,13 @@ def RenderPage(st, set_method, unique_df=True):
         with tab:
             method_instance = augmenter()
             method_instance.render(st)
-            SetupAugmenter(method_instance, set_method, unique_df)
+            setup_aug(method_instance, unique_df)
                 
+def SetAugMethod(method, df, text_column, labels_column):
+    new_df, df_aug = AugmentDataframe(df, text_column, labels_column, method )
+    st.table(df_aug)
+    st.session_state["df"] = new_df
+    st.toast(len(df))
 
 def DataAugmentationPage():
     
@@ -148,16 +191,8 @@ def DataAugmentationPage():
     
     text_column = st.selectbox("Select Text Column", df.columns, index=0 )
     if text_column:
-                
-        augmenter = { "method": None }
-        def set_aug_method(method):
-            augmenter["method"] = method
-            new_df, df_aug = AugmentDataframe(df, text_column, labels_column, method )
-            st.table(df_aug)
-            st.session_state["df"] = new_df
-            st.toast(len(df))
-            
-        RenderPage(st, set_aug_method)
+        set_method = lambda method: SetAugMethod(method, df, text_column, labels_column)
+        RenderPage(st, set_method)
        
 if __name__ == "__main__":          
     DataAugmentationPage()

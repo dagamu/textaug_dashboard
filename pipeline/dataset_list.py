@@ -98,12 +98,12 @@ class DatasetList:
 
         proc_col.container(height=9, border=False )
         
-        if proc_col.button(f"{txt_action_name} | ✏", key=f"TCF-{dataset['name']}"):
+        if proc_col.button(f"{txt_action_name}", icon="✏", key=f"TCF-{dataset['name']}"):
             self.proc_action_diag(dataset['name'], selected_text_col)
             
         proc_col.container(height=10, border=False )
         
-        if proc_col.button(f"{labels_action_name} | ✏", key=f"LCF-{dataset['name']}"):
+        if proc_col.button(f"{labels_action_name}", icon="✏", key=f"LCF-{dataset['name']}"):
             self.proc_action_diag(dataset['name'], selected_labels_col)
         
         del_col.text("")
@@ -118,7 +118,6 @@ class DatasetList:
         
         with stc:
             st.markdown("**Dataset Setting**")
-            #st.write(len(self.datasets))
                 
             datasets_container = st.container(border=True)
             for dataset in self.datasets:

@@ -37,11 +37,12 @@ def lwise_accuracy(y, y_pred):
     acc = np.mean(acc, axis=1)
     return np.mean(acc)
 
-def get_performance( clf, preprocessing,  X, y ):
+def get_performance( clf, preprocessing, X, y ):
     y_features = preprocessing.transform(y)
     return {
         "acc": lwise_accuracy(y_features , clf.predict(X) ),
-        "hl": hamming_loss(y_features , clf.predict(X) )
+        "hl": hamming_loss(y_features , clf.predict(X) ),
+        "exact_acc": accuracy_score(y_features, clf.predict(X))
     }
 
 def train_model(vectorizer, multi_model, preprocessing, base_model, X, y ):

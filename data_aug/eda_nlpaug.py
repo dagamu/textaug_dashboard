@@ -54,7 +54,7 @@ class EDAug:
         
         self.methods = {"SR": self.sr_aug, "RI": self.ri_aug, "RS": self.rs_aug, "RD": self.rd_aug }
     
-    def agument_text(self, text):
+    def augment_text(self, text):
         p_dist = [ w/sum(self.p_weights) for w in self.p_weights ]
         method = choice( list(self.methods.keys()), 1, p=p_dist)[0]
         augmenter = self.methods[method]
@@ -63,9 +63,9 @@ class EDAug:
     def augment(self, data, n = 1):
         if type(data) == list:
             n = 1
-            return [ self.agument_text(text) for text in data ]
+            return [ self.augment_text(text) for text in data ]
         if type(data) == str:
-            return [ self.agument_text(data) for _ in range(n) ]
+            return [ self.augment_text(data) for _ in range(n) ]
         
         else:
             raise TypeError("Only str and list<str> types are supported for augmentation")
