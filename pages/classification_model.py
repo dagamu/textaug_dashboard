@@ -1,8 +1,7 @@
 import streamlit as st
 from menu import menu
-import numpy as np
 
-#from label_dependent_rpr.tfmurlf import TfmurlfVectorizer
+import numpy as np
 
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC

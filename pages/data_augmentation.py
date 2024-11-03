@@ -8,11 +8,11 @@ from menu import menu
 import nlpaug.augmenter.word as naw
 import nlpaug.augmenter.sentence as nas
 
-from data_aug.eda_nlpaug import EDAug
-from data_aug.char_aug import CharAugmenter
+from src.eda_nlpaug import EDAug
+from src.char_aug import CharAugmenter
 
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from label_dependent_rpr.tfmurlf import TfmurlfTransformer
+from src.tfmurlf import TfmurlfTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from utils import row_elements

@@ -10,9 +10,10 @@ import time
 from pages.classification_model import VECTORIZER_METHODS, PROBLEM_TRANSFORM_METHODS, AVAIBLE_MODELS
 from pages.classification_model import train_model, get_performance
 
-from pipeline.dataset_list import DatasetList
-from pipeline.genetic_sampler import GeneticSamplerSetup 
-from pipeline.aug_list import DataAugmentationList
+from src.genetic_sampler import GeneticSamplerSetup 
+from api.pipeline.dataset_list import DatasetList
+from api.pipeline.aug_list import DataAugmentationList
+from api.pipeline.aug_report import make_report
 
 from pages.data_augmentation import AugmentDataframe
 
@@ -114,11 +115,11 @@ def PipelineRun(datasets, genetic_sampler, vec_methods, pt_methods, models, aug_
                                     
                                     suffix = '%' if aug_kind == 'ratio' else ''
                                     step_label = aug_steps[k-1] if k > 0 else "base"
-                                    prefix = f"+{step_label}{suffix}"
+                                    prefix = f"{'+' if k > 0 else ''}{step_label}{suffix}"
                                     
                                     result_row = {
                                         **result_row,
-                                        f"{prefix}_train_shape": X_aug.shape,
+                                        f"{prefix}_train_samples": X_aug.shape[0],
                                         f"{prefix}_acc":        round( aug_performance["acc"] * 100,2) ,
                                         f"{prefix}_exact_acc":  round( aug_performance["exact_acc"] * 100,2),
                                         f"{prefix}_hl":         round( aug_performance["hl"] * 100,2),
@@ -130,7 +131,8 @@ def PipelineRun(datasets, genetic_sampler, vec_methods, pt_methods, models, aug_
                                 prog_text = f"{dataset['name']} - {vec_method} - {pt_method} - {model} - {aug_method['label']} - {i}/{total_cases} {100*i/total_cases:.2f}%"
                                 #prog_bar.progress(i/total_cases, text=prog_text)
     
-    st.dataframe(results)
+    st.session_state["pipeline_results"] = results
+    
     
     
 def PipelinePage():
@@ -164,6 +166,8 @@ def PipelinePage():
     if st.button("Run"):
         PipelineRun(selected_datasets.datasets, genetic_sampler, selected_vec, selected_pt, selected_models, selected_aug_methods )
 
+    if "pipeline_results" in st.session_state.keys():
+        make_report(st.session_state["pipeline_results"])
     
 if __name__ == "__main__": 
     PipelinePage()
