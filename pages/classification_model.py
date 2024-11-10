@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, hamming_loss, f1_score # TODO: Add m
 from skmultilearn.problem_transform import BinaryRelevance #, LabelPowerset, ClassifierChains  
 
 VECTORIZER_METHODS = {
-    "Term Frequency (Count Vectorizer)": CountVectorizer,
+    "Term Frequency": CountVectorizer,
     "TF-IDF": TfidfTransformer,
     #"TF-muRLF": TfmurlfVectorizer
 }

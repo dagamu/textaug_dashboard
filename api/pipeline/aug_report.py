@@ -41,7 +41,7 @@ def make_report(results):
             group_by_options = [None] + [ col for col in categorical_cols if len(results_df[col].unique()) > 1 ]
             group_by = st.selectbox("Group by", group_by_options, format_func=COL_FORMAT_DICT.get )
             
-            lines = st.selectbox("Lines", [None] + list(categorical_cols) , format_func=COL_FORMAT_DICT.get)
+            lines = st.selectbox("Lines", group_by_options , format_func=COL_FORMAT_DICT.get)
             
             performance_metric = st.selectbox("Performance Metric", ["acc", "exact_acc"], format_func=METRICS_FORMAT_DICT.get)
             
