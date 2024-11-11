@@ -19,6 +19,10 @@ COL_FORMAT_DICT = {
 METRICS_FORMAT_DICT = {
     "acc": "Accuracy",
     "exact_acc": "Exact Accuracy",
+    "hl": "Hamming Loss",
+    "precision": "Precision",
+    "recall": "Recall",
+    "f1": "F1 Score"
 }
 
 def make_report(results):
@@ -43,7 +47,7 @@ def make_report(results):
             
             lines = st.selectbox("Lines", group_by_options , format_func=COL_FORMAT_DICT.get)
             
-            performance_metric = st.selectbox("Performance Metric", ["acc", "exact_acc"], format_func=METRICS_FORMAT_DICT.get)
+            performance_metric = st.selectbox("Performance Metric", ["acc", "exact_acc", "hl", "precision", "recall", "f1"], format_func=METRICS_FORMAT_DICT.get)
             
         with graph_col:
             

@@ -8,7 +8,8 @@ import numpy as np
 import time
 
 from pages.classification_model import VECTORIZER_METHODS, PROBLEM_TRANSFORM_METHODS, AVAIBLE_MODELS
-from pages.classification_model import train_model, get_performance
+from pages.classification_model import train_model
+from src.lwise_performance import get_performance
 
 from api.pipeline.dataset_list import DatasetList
 from api.pipeline.aug_list import DataAugmentationList
@@ -130,18 +131,17 @@ def PipelineRun(datasets, resampling_methods, vec_methods, pt_methods, models, a
                                         y_aug = df_to_aug["labels_column"]
 
                                         aug_clf = train_model(vectorizer, multi_model, preprocessing, base_model, X_aug, y_aug )
-                                        aug_performance = get_performance( aug_clf, preprocessing, X_test, y_test )
                                         
                                         suffix = '%' if aug_kind == 'ratio' else ''
                                         step_label = aug_steps[k-1] if k > 0 else "base"
                                         prefix = f"{'+' if k > 0 else ''}{step_label}{suffix}"
                                         
+                                        aug_performance = get_performance( aug_clf, preprocessing, X_test, y_test, prefix=prefix, round_=4, percentage=True )
+                                        
                                         result_row = {
                                             **result_row,
                                             f"{prefix}_train_samples": X_aug.shape[0],
-                                            f"{prefix}_acc":        round( aug_performance["acc"] * 100,2) ,
-                                            f"{prefix}_exact_acc":  round( aug_performance["exact_acc"] * 100,2),
-                                            f"{prefix}_hl":         round( aug_performance["hl"] * 100,2),
+                                            **aug_performance,
                                             f"{prefix}_time_performace": time.time() - time_performance_start
                                         }
                                         i += 1

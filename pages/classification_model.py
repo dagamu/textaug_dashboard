@@ -1,8 +1,6 @@
 import streamlit as st
 from menu import menu
 
-import numpy as np
-
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
@@ -10,8 +8,9 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, hamming_loss, f1_score # TODO: Add more performance metrics
 from skmultilearn.problem_transform import BinaryRelevance #, LabelPowerset, ClassifierChains  
+
+from src.lwise_performance import get_performance
 
 VECTORIZER_METHODS = {
     "Term Frequency": CountVectorizer,
@@ -30,19 +29,6 @@ AVAIBLE_MODELS = {
     "MLP NN": (MLPClassifier, { "max_iter": 500, "verbose": False }),
     #"SVM Classifier": SVC,
 }
-
-def lwise_accuracy(y, y_pred):
-    acc = y == y_pred
-    acc = np.mean(acc, axis=1)
-    return np.mean(acc)
-
-def get_performance( clf, preprocessing, X, y ):
-    y_features = preprocessing.transform(y)
-    return {
-        "acc": lwise_accuracy(y_features , clf.predict(X) ),
-        "hl": hamming_loss(y_features , clf.predict(X) ),
-        "exact_acc": accuracy_score(y_features, clf.predict(X))
-    }
 
 def train_model(vectorizer, multi_model, preprocessing, base_model, X, y ):
         
@@ -95,11 +81,11 @@ def ClasificationModelPage():
             
             clf = train_model(vectorizer, multi_model, preprocessing, base_model, X_train, y_train )
             
-            train_per = get_performance( clf, preprocessing, X_train, y_train )
+            train_per = get_performance( clf, preprocessing, X_train, y_train, round_=2, percentage=True )
             test_per = get_performance( clf, preprocessing, X_test, y_test )
             
-            st.info(f"Train Split Performance: Accuracy {train_per['acc']*100:.2f}%, Hamming Loss {train_per['hl']:.3f}", icon="ℹ")
-            st.info(f"Test Split Performance: Accuracy {test_per['acc']*100:.2f}%, Hamming Loss {train_per['hl']:.3f}", icon="ℹ")
+            st.info(f"Train Split Performance: Accuracy {train_per['acc']}%, Hamming Loss {train_per['hl']}%", icon="ℹ")
+            st.info(f"Test Split Performance: Accuracy {test_per['acc']}%, Hamming Loss {train_per['hl']}%", icon="ℹ")
     
 if __name__ == "__main__":         
     ClasificationModelPage()
