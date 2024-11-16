@@ -1,3 +1,5 @@
+## Huggin Face
+
 https://huggingface.co/datasets/qanastek/HoC						17 464 samples - 37 labels
 https://huggingface.co/datasets/Abirate/english_quotes		 		 	 2 508 samples
 https://huggingface.co/datasets/opentargets/clinical_trial_reason_to_stop	 	 3 747 samples - 17 labels
@@ -10,3 +12,7 @@ https://huggingface.co/datasets/ilos-vigil/steam-review-aspect-dataset			 1 100 
 https://huggingface.co/datasets/owaiskha9654/PubMed_MultiLabel_Text_Classification_Dataset_MeSH 		50 000 samples
 https://huggingface.co/datasets/TheBritishLibrary/blbooksgenre?row=0
 https://huggingface.co/datasets/danieldux/ESCO (*)
+
+## Papers with Code
+
+https://paperswithcode.com/datasets?task=multi-label-classification&mod=texts
