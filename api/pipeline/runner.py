@@ -4,152 +4,133 @@ import pandas as pd
 import time
 
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.model_selection import train_test_split
-
-from pages.classification_model import VECTORIZER_METHODS, PROBLEM_TRANSFORM_METHODS, AVAIBLE_MODELS
-from pages.data_augmentation import AugmentDataframe
-from pages.classification_model import train_model
 from src.lwise_performance import get_performance
 
 class PipelineRunner:
     
-    def __init__(self, datasets, resampling, vectorizers, problem_transformations, models, aug_methods ) -> None:
-        self.datasets = datasets
-        self.resampling_methods = resampling
-        self.vectorizers = vectorizers
-        self.problem_transformations = problem_transformations
-        self.models = models
-        self.aug_methods = aug_methods
-        
+    def __init__(self, session ) -> None:
+        self.session = session
         self.mlb = MultiLabelBinarizer()
         
     def run(self, update_fn):
         
-        self.update_fn = update_fn
         self.results = []
         self.row_info = {}
         self.current_iteration = {}
+        self.update_fn = update_fn
         
         self.iter_count = 0
-        self.total_iterations = self.calc_iterations()
+        #self.total_iterations = self.calc_iterations()
         
-        for dataset in self.datasets:
-            for sampler in self.resampling_methods:
+        datasets = self.session.datasets.items
+        sampling_methods = self.session.sampling.items
+        
+        for dataset in datasets:
+            if not dataset.loaded:
+                dataset.get_data()
+            
+            for sampler in sampling_methods:
                 
-                df = dataset["df"]
-                self.txt_col_name = dataset["text_column"]
-                self.label_col_name = dataset["labels_column"]
+                self.current_iteration["dataset"] = dataset
+                self.row_info["dataset"] = dataset.name
                 
-                self.current_iteration["df"] = df
-                self.row_info["df"] = dataset['name']
+                # TODO: PREPROCESSING   
+                if dataset.y_format != 'BINARY':
+                    dataset.y_train = self.mlb.fit_transform( dataset.y_train )
+                    dataset.y_test = self.mlb.fit_transform( dataset.y_test )
+                    dataset.y_format = 'BINARY'
                 
-                labels_col = df[ dataset["labels_column"] ]
-                if dataset["labels_proc_action"]:
-                    labels_col = dataset["labels_proc_action"].apply_to(labels_col)
-                    
-                txt_col = df[ dataset["text_column"] ] 
-                if dataset["text_proc_action"]:
-                    txt_col = dataset["text_proc_action"].apply_to(txt_col)
-                    
-                y_features = self.mlb.fit_transform(labels_col)
-                dataset_samples = sampler.get_sample(y_features)
+                dataset_samples = sampler.get_samples(dataset)
                 self.run_subset(dataset_samples)
                 
     def run_subset(self, dataset_samples):
-        df = self.current_iteration["df"]
         for df_mask in dataset_samples:
-            df_mask = df_mask.astype(bool)            
+            self.current_iteration["sample_mask"] = df_mask.astype(bool)            
             self.row_info["n_samples"] = np.sum(df_mask)
+            self.run_training()
             
-            text_col = df[self.txt_col_name][df_mask]
-            labels_col = df[self.label_col_name][df_mask]
+    def run_training(self):
+        
+        clf_manager = self.session.classification
+        text_rp_methods =  clf_manager.selected_methods["text_representation"]
+        clf_models = clf_manager.selected_methods["classification_model"]
+        pt_methods = clf_manager.selected_methods["problem_transformation"]
+        
+        for text_rp in text_rp_methods:
+            self.current_iteration["text_rp"] = text_rp
+            self.row_info["text_rp"] = text_rp.name
             
-            split = train_test_split( text_col, labels_col, test_size=0.3, random_state=42 )
-            self.run_training(df, split)
-            
-    def run_training(self, df, split):
-        for vec_method in self.vectorizers:
-            self.current_iteration["vectorizer"] = VECTORIZER_METHODS[vec_method]()
-            self.row_info["vectorizer"] = vec_method
-            
-            for pt_method in self.problem_transformations:
-                multi_model, preprocessing = PROBLEM_TRANSFORM_METHODS[pt_method].values()
-                preprocessing = preprocessing()
+            for pt_method in pt_methods:
                 
-                self.current_iteration["multi_model"] = multi_model
-                self.current_iteration["preprocessing"] = preprocessing
-                self.row_info["pt_method"] = pt_method
+                self.current_iteration["multi_model"] = pt_method
+                self.row_info["pt_method"] = pt_method.name
                 
-                for model in self.models:
-                    base_model, model_params = AVAIBLE_MODELS[ str(model) ]
-                    base_model = base_model(**model_params)
-                    
+                for model in clf_models:
+                    base_model = model
                     self.current_iteration["model"] = base_model
-                    self.row_info["model"] = model
+                    self.row_info["model"] = base_model.name
                     
-                    labels_col = df[self.label_col_name]
-                    preprocessing.fit(labels_col)
-                    
-                self.run_augmentation(split)
+                self.run_augmentation()
         
-    def run_augmentation(self, split):
+    def run_augmentation(self):
         
-        X_train = split[0]
-        delta_steps = self.calc_delta_steps( X_train.shape[0] )
+        aug_manager = self.session.aug_manager
+        aug_selection_methods = aug_manager.aug_selection_methods
+        aug_methods = aug_manager.items
         
-        for aug_method in self.aug_methods.methods:
+        delta_steps = self.calc_delta_steps()
+        self.current_iteration['aug_steps'] = delta_steps
+        
+        for aug_method in aug_methods:
             self.current_iteration["aug_method"] = aug_method
-            self.row_info["aug_method"] = aug_method['label']
-            for aug_selection_method in self.aug_methods.select_input_method:
-                self.row_info["aug_choice_method"] = aug_selection_method
+            self.row_info["aug_method"] = aug_method.name
+            
+            for aug_selection in aug_selection_methods:
+                self.current_iteration["aug_selection"] = aug_selection()
+                self.row_info["aug_selection"] = aug_selection.name
                 
-                X_train, _, y_train, _ = split
-                df_to_aug = pd.DataFrame({"text_column": X_train, "labels_column": y_train} )
-                
-                self.current_iteration["aug_steps"] = np.sort( self.aug_methods.steps )
-                self.current_iteration["df_to_aug"] = df_to_aug
+                dataset = self.current_iteration['dataset']
+                dataset.X_aug = np.array([])
+                dataset.y_aug = np.array([])
                 
                 for k, step in enumerate(delta_steps):
-                    self.augmentation_iteration(k, step, split)
+                    self.augmentation_iteration(dataset, k, step)
                     self.iter_count += 1
                     
                 self.results.append(self.row_info)
-                self.update_fn( self.iter_count / self.total_iterations, self.get_update_text() )
+                #self.update_fn( self.iter_count / self.total_iterations, self.get_update_text() )
                     
                     
-    def augmentation_iteration(self, k, step, split):
+    def augmentation_iteration(self, dataset, k, step):
         time_performance_start = time.time()
         
-        _, X_test, _, y_test = split
+        aug_method = self.current_iteration["aug_method"]
+        aug_selection = self.current_iteration["aug_selection"]
         
-        aug_method = self.current_iteration["aug_method"]["method"]
-        aug_method.calc_n_samples = lambda _: step
+        aug_manager = self.session.aug_manager
+        clf_manager = self.session.classification
         
-        aug_choice = self.row_info["aug_choice_method"]
-        df_to_aug, _ = AugmentDataframe( self.current_iteration["df_to_aug"], "text_column", "labels_column", aug_method, aug_choice )
+        aug_manager.AugmentDataset(dataset, step, aug_method, aug_selection)
         
-        base_model, model_params = AVAIBLE_MODELS[ self.row_info["model"] ]
-        base_model = base_model(**model_params)
+        base_model = self.current_iteration["model"].base
+        text_rp = self.current_iteration["text_rp"].base
+        multi_model = self.current_iteration["multi_model"].base
+        #preprocessing = self.current_iteration["preprocessing"]
         
-        X_aug = df_to_aug["text_column"]
-        y_aug = df_to_aug["labels_column"]
-
-        vectorizer = self.current_iteration["vectorizer"]
-        multi_model = self.current_iteration["multi_model"]
-        preprocessing = self.current_iteration["preprocessing"]
-        aug_clf = train_model(vectorizer, multi_model, preprocessing, base_model, X_aug, y_aug )
+        X_trainf, y_trainf = dataset.full_train_data()
+        aug_clf = clf_manager.train_model(text_rp, multi_model, base_model, X_trainf, y_trainf )
         
-        aug_kind = self.aug_methods.aug_kind
+        aug_kind = self.current_iteration['aug_kind']
         aug_steps = self.current_iteration["aug_steps"]
         suffix = '%' if aug_kind == 'ratio' else ''
         step_label = aug_steps[k-1] if k > 0 else "base"
         prefix = f"{'+' if k > 0 else ''}{step_label}{suffix}"
         
-        aug_performance = get_performance( aug_clf, preprocessing, X_test, y_test, prefix=prefix, round_=4, percentage=True )
+        aug_performance = get_performance( aug_clf, np.ravel(dataset.X_test), dataset.y_test, prefix=prefix, round_=4, percentage=True )
         
         self.row_info = {
             **self.row_info,
-            f"{prefix}_train_samples": X_aug.shape[0],
+            f"{prefix}_train_samples": X_trainf.shape[0],
             **aug_performance,
             f"{prefix}_time_performace": time.time() - time_performance_start
         }
@@ -161,26 +142,30 @@ class PipelineRunner:
         aug_method = self.row_info["aug_method"]
         aug_choice_method = self.row_info["aug_choice_method"]
         
-        percentage = 100 * self.iter_count / self.total_iterations
+        percentage = 100 * self.iter_count / self.total_iterationsrun 
+        
         if percentage == 100:
             return f"Pipeline completed"
         
         return f"{percentage:.2f}% - {dataset}.{vectorizer}.{model}.{aug_method}.{aug_choice_method}"
             
-    def calc_delta_steps(self, n_samples):
-        aug_kind = self.aug_methods.aug_kind
-        aug_steps = np.sort( self.aug_methods.steps )
+    def calc_delta_steps(self):
+        aug_steps = np.sort( self.session.aug_manager.steps )
+        aug_kind = "N" if np.all(aug_steps % 1 == 0) else "%"
+        self.current_iteration['aug_kind'] = aug_kind
+        
+        train_size = self.row_info["n_samples"]
         
         delta_steps = []
-        if aug_kind == "count":
+        if aug_kind == "N":
             delta_steps = [ 0, aug_steps[0] ]
             for j in range(1, len(aug_steps)):
                 value = aug_steps[j]
                 delta_steps.append( value - aug_steps[j-1] )
                 
-        elif aug_kind == "ratio":
-            to_ratio = lambda x: int(x/100 * n_samples ) 
-            delta_steps = [ 0, to_ratio(aug_steps[0])]
+        elif aug_kind == "%":
+            to_ratio = lambda x: int(x * train_size) 
+            delta_steps = [ 0, to_ratio(aug_steps[0]) ]
             for j in range(1, len(aug_steps)):
                 value = aug_steps[j]
                 delta_steps.append( int( to_ratio(value) - sum(delta_steps) )  )

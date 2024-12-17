@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 
 from api.genetic_sampler_api import GeneticSamplerAPI
-from utils import custom_multiselect
+from utils import custom_multiselect_old
 
 class FullDatasetSampler:
     name = "Full Dataset"
@@ -20,7 +20,7 @@ class RandomSampler:
     def render(self):
         st.markdown( f"**{self.name}**" )
         
-        self.n_samples = custom_multiselect("Select N° Samples", [100], [100], 100, key="RandomSamplerN" )
+        self.n_samples = custom_multiselect_old("Select N° Samples", [100], [100], 100, key="RandomSamplerN" )
         self.n_iterations = len(self.n_samples)
         
     def get_sample(self, y):

@@ -6,8 +6,8 @@ def lwise_accuracy(y, y_pred):
     acc = np.mean(acc, axis=1)
     return np.mean(acc)
 
-def get_performance( clf, preprocessing, X, y, prefix="", round_=-1, percentage=False ):
-    y_features = preprocessing.transform(y)
+def get_performance( clf, X, y, prefix="", round_=-1, percentage=False ):
+    y_features = y
     y_pred = clf.predict(X)
     
     prefix = prefix + '_' if prefix != "" else ""

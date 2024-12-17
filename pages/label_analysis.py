@@ -1,66 +1,39 @@
-from math import trunc, log10, sqrt
-from textwrap import dedent
+import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
+
 import streamlit as st
 from menu import menu
 
-def extract_labels( df, labels_column ):
-    all_labels = {}
-    for i, row in df.iterrows():
-        labels_text = row[labels_column]
-        row_labels = labels_text
-        
-        if type(row_labels) == list:
-            for l in row_labels:
-                if l in all_labels:
-                    all_labels[l]["count"] += 1
-                else:
-                    all_labels[l] = { "label": l, "count": 1 }
-    return all_labels
+from src.imbalance_report import create_imbalance_report
 
-def SummaryTab(st, all_labels):
-        
-    max_ = max( list(all_labels.keys()), key=lambda k: all_labels[k]["count"] )
-    min_ = min( list(all_labels.keys()), key=lambda k: all_labels[k]["count"] )
+def SummaryTab(dataset, report):
     
-    data = pd.DataFrame( [l.values() for l in all_labels.values()], columns=["Label", "Frequency", "Imbalance Ratio"] )
-    data.sort_values(by="Frequency", inplace=True, ignore_index=True )
+    labels = np.array(dataset.labels)
+    max_count_labels = labels[ report["max_count"] ]
+    min_count_labels = labels[ report["min_count"] ]
+    max_count = report["labels_freq"][ report["max_count"] ]
+    min_count = report["labels_freq"][ report["min_count"] ]
     
-    max_log10 = trunc( log10(all_labels[max_]["count"]) )
-    data['Order'] = data.index.astype(str)
-    data['Index + Label'] = data["Order"].str.zfill(max_log10) + ' ' + data['Label'].astype(str)
+    table_sorted = pd.DataFrame( {"Label": dataset.labels, "Frequency": report["labels_freq"] } )
+    table_sorted = table_sorted.sort_values(by="Frequency", ignore_index=True )
     
-    st.line_chart( data, x="Index + Label", y="Frequency"  )
+    fig = go.Figure()
+    fig.add_trace( go.Scatter(x=table_sorted['Label'], y=table_sorted['Frequency'], mode='lines', name='Frequency'))
+    fig.update_layout( xaxis_title="Label", yaxis_title="Frequency")
+    st.plotly_chart( fig, config={'displayModeBar': False}, use_container_width=True )
     
-    info = f"""\n\
-        - Unique Labels: { len(all_labels.keys())}\n
-        - More Occurrences: {max_} ({all_labels[max_]["count"]})\n
-        - Less Occurrences: {min_} ({all_labels[min_]["count"]})"""
-                
-    st.markdown(dedent(info))
+    st.markdown(f"- Unique Labels: { len(dataset.labels) }\n")
+    st.markdown(f"- More Occurrences: {max_count_labels} ({max_count})")
+    st.markdown(f"- Less Occurrences: {min_count_labels} ({min_count})")
+       
     
-def BalaceTab(st, all_labels ):
-    
-    max_occurences = max( [label["count"] for label in all_labels.values()] )
-    
-    sum_IR = 0
-    MaxIR = 0
-    for label_data in all_labels.values():
-        value = max_occurences / label_data["count"]
-        all_labels[label_data["label"]]["imbalance_ratio"] = value
-        sum_IR += value
-        MaxIR = value if value > MaxIR else MaxIR
-    
-    q = len(all_labels)
-    MeanIR = sum_IR / q
-    
-    IRLbl_sigma = sqrt( sum( [ (label["count"] - MeanIR)**2/(q-1) for label in all_labels.values()] ) )
-    CVIR = IRLbl_sigma / MeanIR
+def BalaceTab(_, report):
     
     col1, col2, col3 = st.columns([1.5,1,1])
     with col1:
         st.markdown("</br>Mean Imbalance Ratio (MeanIR)", unsafe_allow_html=True)
-        st.markdown("</br>Maximun Imbalance Ratio (MaxIR)", unsafe_allow_html=True)
+        st.markdown("</br>Maximum Imbalance Ratio (MaxIR)", unsafe_allow_html=True)
         st.markdown("</br>Coefficient of variaton of IRLbl (CVIR)", unsafe_allow_html=True)
         
     with col2:
@@ -69,51 +42,57 @@ def BalaceTab(st, all_labels ):
         st.latex(r'''\frac {IRLbl\sigma}{MeanIR}''')
     
     with col3:
-        st.markdown(f"</br>**{MeanIR:.2f}**", unsafe_allow_html=True)
-        st.markdown(f"</br>**{MaxIR:.2f}**", unsafe_allow_html=True)
-        st.markdown(f"</br>**{CVIR:.2f}**", unsafe_allow_html=True)
+        st.markdown(f"</br>**{report['mean_ir']:.2f}**", unsafe_allow_html=True)
+        st.markdown(f"</br>**{report['max_ir']:.2f}**", unsafe_allow_html=True)
+        st.markdown(f"</br>**{report['cv_ir']:.2f}**", unsafe_allow_html=True)
         
-def DataviewTab(st, all_labels):
-    labels_df = pd.DataFrame(all_labels.values())
-    st.table(labels_df)
+def DataviewTab(dataset, report):
+    labels_table = pd.DataFrame({ "Label": dataset.labels, "Frequency": report["labels_freq"], "Imbalance Ratio": report["irl_bl"]}) 
+    st.dataframe(labels_table.round(decimals=2), width=500)
 
+def DatasetReport(dataset, split):
+    st.title("Label Analysis")
+    
+    if not dataset.loaded:
+        dataset.get_data()
+    
+    if not dataset.preprocessed:
+        session = st.session_state["session"]
+        session.apply_preprocessing(dataset)
+    
+    sum_tab, balance_tab, dataview_tab = st.tabs(["Summary", "Balance Measures", "Dataview"])     
+    y_features = dataset.y_train if split == "Train" else dataset.y_test
+    
+    imbalance_report = create_imbalance_report(y_features)
+        
+    with balance_tab:
+        BalaceTab(dataset, imbalance_report)
+    
+    with sum_tab:
+        SummaryTab(dataset, imbalance_report)    
+        
+    with dataview_tab:
+        DataviewTab(dataset, imbalance_report)
 
 def LabelAnalysisPage():
     
-    if not "df" in st.session_state:
-        st.warning('There is no dataset :(')
-        return
-    df = st.session_state["df"]
-    
-    st.title("Label Analysis")
-    
-    labels_column = None
-    if not "labels_column" in st.session_state and labels_column == None:
-        selected_column = st.selectbox("Labels Column", df.columns, index=None )
-        if selected_column:
-            if st.button("Extract Labels", type="primary" ):
-                labels_column = selected_column
-                st.session_state["labels_column"] = selected_column
-                st.session_state["labels_data"] = extract_labels(df, selected_column)
-    else:
-        labels_column = st.session_state["labels_column"]
-                
-    if not "all_labels" in st.session_state:
-        st.session_state["labels_data"] = extract_labels(df, labels_column)
-    
-    if labels_column:    
-        sum_tab, balance_tab, dataview_tab = st.tabs(["Summary", "Balance Measures", "Dataview"])     
-        all_labels = st.session_state["labels_data"]
-            
-        with balance_tab:
-            BalaceTab( st, all_labels )
+    datasets = st.session_state["session"].datasets
+    if len(datasets.items):
+        select_col, split_col, btn_col, _ = st.columns([2,2,1,1])
+        selected_dataset = select_col.selectbox("Dataset to Analyse", options=datasets.items, format_func=lambda item: item.key_train)
+        selected_split = split_col.selectbox("Split", options=["Train", "Test"], index=0)
         
-        with sum_tab:
-            SummaryTab( st, all_labels )    
+        btn_col.container(height=10, border=False)
+        if btn_col.button("View", type="primary"):
+            DatasetReport(selected_dataset, selected_split)
+            st.session_state["label_analysis_dataset"] = selected_dataset
+            return
+    else:
+        st.warning("There are no datasets in the current session :(")
             
-        with dataview_tab:
-            DataviewTab(st, all_labels)
-   
+    if "label_analysis_dataset" in st.session_state:
+        DatasetReport(selected_dataset, selected_split)
+    
 if __name__ == "__main__":          
-    LabelAnalysisPage()
     menu()
+    LabelAnalysisPage()

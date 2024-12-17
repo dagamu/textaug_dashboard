@@ -35,15 +35,16 @@ class EDAug:
     
     # TODO: Return or save methods of augmentation to show in table
     
-    def __init__(self, p_weights = [1,1,1,1], lexical_src='wordnet', lang="eng", stopwords=None, additional_params={}, name="Easy Data Augmentation" ):
+    name = "EDA Augmentation"
+    key = "eda_aug"
+    
+    def __init__(self, p_weights = [1,1,1,1], lexical_src='wordnet', lang="eng", stopwords=None, additional_params={} ):
         
         additional_params = {**INITIAL_ADDITIONAL_PARAMS, **additional_params}
         sr_add_params = additional_params["SR"]
         ri_add_params = additional_params["RI"]
         rs_add_params = additional_params["RS"]
         rd_add_params = additional_params["RD"]
-        
-        self.name = name
         
         self.p_weights = p_weights
         

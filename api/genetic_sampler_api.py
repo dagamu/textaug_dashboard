@@ -3,7 +3,7 @@ import numpy as np
 
 from src.genetic_sampler import GeneticSampler, uniform_crossover
 
-from utils import custom_multiselect
+from utils import custom_multiselect_old
 
 class GeneticSamplerAPI:
   
@@ -63,7 +63,7 @@ class GeneticSamplerAPI:
       self.keep_labels = st.checkbox("Keep N° of Labels")
       self.pob_size = st.number_input("Population Size", min_value=5, value=20 )
       self.max_iterations = st.number_input("Max Iterations", min_value=5, value=10 )
-      self.n_samples_list = custom_multiselect("Number of Samples", ["Free"], ["Free"], 100, "genetic_nsamples")
+      self.n_samples_list = custom_multiselect_old("Number of Samples", ["Free"], ["Free"], 100, "genetic_nsamples")
       
       self.MeanIrRange = self.range_cases("Mean Imbalance Ratio ", "MeanIR")
       self.MaxIrRange = self.range_cases("Max Imbalance Ratio", "MaxIR")

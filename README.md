@@ -1,15 +1,20 @@
 # Text Augmentation Dashboard
 ## Data Augmentation with LLMs for MLC Tasks
 
+> [!WARNING]
+> The project is still in development.
+
 - Requirements
-    - streamlit==1.38.0
+    - streamlit==1.40.0
+    - plotly
     - pandas
     - scikit-learn
     - scikit-multilearn
-    - matplotlib
+    - arff
     - nltk
+    - nlpaug
     - neattext
-    - nlpaug (*)
+    - datasets
         
 ---
 
@@ -17,7 +22,6 @@
 
 ```console
 $ pip install -r requirements.txt
-$ pip install numpy requests nlpaug
 ```
 
 ```console

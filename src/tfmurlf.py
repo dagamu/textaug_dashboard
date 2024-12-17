@@ -1,5 +1,4 @@
 import numpy as np
-
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class TfmurlfTransformer(BaseEstimator, TransformerMixin):
@@ -12,9 +11,9 @@ class TfmurlfTransformer(BaseEstimator, TransformerMixin):
   def calc_inv_vec(self, X, y, label_index):
 
     label_term = self.label_term_m
-    anti_matrix = np.delete( label_term, label_index, axis=0 )
-    result = np.average(anti_matrix, axis=0 )
-    result = np.maximum( result, np.ones(result.shape) )
+    anti_matrix = np.delete(label_term, label_index, axis=0)
+    result = np.average(anti_matrix, axis=0)
+    result = np.maximum(result, np.ones(result.shape) )
 
     return result
 

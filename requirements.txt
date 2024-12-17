@@ -1,8 +1,10 @@
-streamlit==1.38.0
+streamlit==1.40.0
 plotly
 pandas
 scikit-learn
 scikit-multilearn
+arff
 nltk
+nlpaug
 neattext
 datasets
