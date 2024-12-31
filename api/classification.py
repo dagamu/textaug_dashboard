@@ -4,41 +4,44 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.pipeline import Pipeline
 from skmultilearn.problem_transform import BinaryRelevance #, LabelPowerset, ClassifierChains  
 
+import numpy as np
 
 class TextRepresentationMethod:
     kind = "text_representation"
-    def __init__(self, base, name):
+    def __init__(self, base, key):
         self.base = base
-        self.name = name
+        self.name = type(base).__name__
+        self.key = key
         
 class ClassificationModel:
     kind = "classification_model"
-    def __init__(self, base, name):
+    def __init__(self, base, key):
         self.base = base
-        self.name = name
+        self.name = type(base).__name__
+        self.key = key
         
 class ProblemTransformation:
     kind = "problem_transformation"
-    def __init__(self, base, name):
+    def __init__(self, base, key):
         self.base = base
-        self.name = name
-        
+        self.name = type(base).__name__
+        self.key = key
 
 class ClassificationManager:
     
     available_methods_labels = {
             "text_representation": {
-                "Term Frequency": CountVectorizer,
+                "TF": CountVectorizer,
                 "TF-IDF": TfidfTransformer
                 # TODO: TF-muRFL
             }, 
             "classification_model": {
-                "Multinomial Naive Bayes": MultinomialNB,
+                "MNB": MultinomialNB,
                 "MLP NN": MLPClassifier
                 # TODO: SVC
             }, 
             "problem_transformation": {
-                "Binary Encoding": BinaryRelevance
+                "binary": BinaryRelevance
                 # TODO: Label Powerset, CC
             }
     }
@@ -75,7 +78,8 @@ class ClassificationManager:
     def train_model(self, vectorizer, multi_model, base_model, X, y ):
         
         base_vec = CountVectorizer()
-        y_features = y # preprocessing
+        X = np.array(X)
+        y_features = np.array(y) # preprocessing
             
         base_clf = base_model()
         vec = vectorizer()

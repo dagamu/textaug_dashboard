@@ -24,4 +24,4 @@ https://huggingface.co/datasets/danieldux/ESCO (*)
 
 ## Papers with Code
 
-https://paperswithcode.com/datasets?task=multi-label-classification&mod=texts
+https://paperswithcode.com/datasets?task=multi-label-classification&mod=texts&o=newest

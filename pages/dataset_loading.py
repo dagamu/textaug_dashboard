@@ -18,7 +18,7 @@ class SourceTab:
         
     def get_params(self):
         return { 
-                    "key_train": self.key_train,
+                    "key": self.key_train,
                     "columns_indices": {"X": (0, 1), "Y": (1, 1)},
                     "key_test": self.key_test,
                     "make_split": self.make_split,

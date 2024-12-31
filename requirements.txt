@@ -1,8 +1,10 @@
 streamlit==1.40.0
-plotly
+numpy
 pandas
 scikit-learn
 scikit-multilearn
+matplotlib
+plotly
 arff
 nltk
 nlpaug

@@ -14,11 +14,21 @@ def render_sampling_methods():
     sampling_manager = st.session_state["session"].sampling
     with st.container(border=True):
         for i, item in enumerate(sampling_manager.items):
-            st.markdown(f"**[{i+1}] {item.name}**")
+            
+            metadata, actions = st.columns([6,1])
+            metadata.markdown(f"**[{i+1}] {item.name}**")
+            
+            if actions.button(label="🗑", type="primary", key=f"{item.name}-DELBTN", use_container_width=True):
+                sampling_manager.remove(item)
+                st.rerun()
+            
             if i < len(sampling_manager.items) - 1:
                 st.divider()
             else:
                 st.text("")
+                
+        if len(sampling_manager.items) == 0:
+            st.warning("There is no sampling methods provided.")
 
 def SamplingPage():
     st.subheader("Sampling Methods")
@@ -36,7 +46,7 @@ def SamplingPage():
                 method_match = sampling_manager.available_methods[key]
                 params = sampling_tabs[key]()
                 if st.button("Add New Method", key=f"{key}_btn"):
-                    sampling_manager.add_method(method_match(**params))
+                    sampling_manager.add_method(method_match, params)
                     
     st.divider()
     render_sampling_methods()

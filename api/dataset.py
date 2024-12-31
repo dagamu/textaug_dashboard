@@ -1,50 +1,93 @@
+import numpy as np
+import pandas as pd
 import os
 import re
-import pandas as pd
-import numpy as np
+import ast
 
 from skmultilearn.dataset import load_dataset, available_data_sets
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MultiLabelBinarizer
 
 import datasets
 import requests
 
+class Formatter:
+    
+    def __init__(self):
+        self.mlb = MultiLabelBinarizer()
+        
+    def format_text(self, text, format_):
+        
+        fn_dict = { "TEXT": lambda x: x } # [0]?
+        if not format_ in fn_dict:
+            print(f"{format_} format not supported")
+            
+        return [fn_dict[format_](value) for value in text]
+    
+    def format_labels(self, labels, format_, sep=',', labels_names=[]):
+        
+        if format_ == "BINARY":
+            if len(labels_names) == 0:
+                labels_names = [ f"L{i}" for i in range(labels.shape[1]) ]
+        
+        fn_dict = { 
+                    "LIST": lambda y: y,
+                    "SEP": lambda y: y.split(sep),
+                    "BINARY_LIST": lambda y: labels_names[np.array(y, dtype=bool)],
+                    "LITERAL": lambda y: ast.literal_eval(y)
+                }
+        
+        if not format_ in fn_dict:
+            print(f"{format_} format not supported")
+            
+        return map(fn_dict[format_], labels)
+        return self.mlb.fit_transform(y_list)
+
 class Dataset:
     source = "UNKNOWN"
     name = "Unknown"
+    
     loaded = False
     preprocessed = False
-    columns = None
+    labels_provided = False
     
-    X_aug = None
-    y_aug = None
+    columns = None
+    X_aug = []
+    y_aug = []
     
     """
     X_format = [ TEXT | FREQ ] -> TODO: TEXT_COLUMNS
-    y_format = [ LIST | BINARY | SEP | LITERAL ]
+    y_format = [ LIST | BINARY | BINARY LIST | SEP | LITERAL ]
     """
     format_sep = ','
     
     default_params = {  
                         "key": None,
                         "key_test": None,
+                        "text_column": None,
+                        "labels_column": None,
                         "columns_indices": {"X":(0,1), "Y":(1,1)},
                         "make_split": False,
                         "random_seed": 42,
+                        "X_format": "TEXT",
+                        "y_format": "LIST",
+                        "labels_names": []
                       }
     
     def __init__(self, **kwargs):
         self.preload(**kwargs)
         
-        params = { **self.default_params, **kwargs } 
-        self.key_train = params["key"]
-        self.key_test = params["key_test"]
-        self.columns_indices = params["columns_indices"]
-        self.make_split = params["make_split"]
-        self.random_seed = params["random_seed"]
+        self.params = { **self.default_params, **kwargs } 
+        self.key_train = self.params["key"]
+        self.key_test = self.params["key_test"]
+        self.columns_indices = self.params["columns_indices"]
+        self.make_split = self.params["make_split"]
+        self.random_seed = self.params["random_seed"]
         
         self.name = self.get_name()
         self.setup(**kwargs)
+        self.formatter = Formatter()
+        self.labels_provided = "labels_names" in kwargs
         
     def preload(self, **kwargs):
         pass
@@ -52,26 +95,39 @@ class Dataset:
     def setup(self, **kwargs):
         pass
     
-    def full_train_data(self):
-        X = np.ravel(self.X_train)
-        y = self.y_train
+    def full_train_data(self, mask=[]):
+        if len(mask):
+            X = [ x_ for i, x_ in enumerate(self.X_train) if mask[i] ] 
+            y = [ y_ for i, y_ in enumerate(self.y_train) if mask[i] ] 
+        else:
+            X = list(self.X_train)
+            y = list(self.y_train)
         
-        if np.all(self.X_aug != None) and len(self.y_aug):
-            X = np.concat( (X, self.X_aug ))
-            y = np.vstack( (y, self.y_aug ))
+        if len(self.X_aug) and len(self.y_aug):
+            X += self.X_aug
+            y += self.y_aug
             
-        return np.ravel(X), y
+        return X, y
         
     def get_name(self):
         return self.key_train
     
     def update_data(self, X_train, X_test, y_train, y_test):
-        self.X_train = X_train
-        self.X_test  = X_test
-        self.y_train = y_train
-        self.y_test  = y_test
+        self.X_train = self.formatter.format_text(X_train, self.params["X_format"])
+        self.X_test  = self.formatter.format_text(X_test, self.params["X_format"])
     
-    def column_info_to_range(self, columns_indices):
+        l = self.labels if self.labels_provided else []
+        self.y_train = self.formatter.format_labels(y_train, self.params["y_format"], self.format_sep, labels_names=l )
+        self.y_test  = self.formatter.format_labels(y_test, self.params["y_format"], self.format_sep, labels_names=l )
+    
+    def column_info_to_range(self, columns_indices, columns=[]):
+        
+        if self.params["text_column"]:
+            self.columns_indices['X'] = (columns.index(self.params["text_column"]), 1)
+            
+        if self.params["labels_column"]:
+            self.columns_indices['Y'] = (columns.index(self.params["labels_column"]), 1)
+        
         X_range = range( columns_indices['X'][0], columns_indices['X'][0] + columns_indices['X'][1] )
         y_range = range( columns_indices['Y'][0], columns_indices['Y'][0] + columns_indices['Y'][1] )
         return X_range, y_range
@@ -80,24 +136,28 @@ class Dataset:
         df = pd.read_csv(self.key_train)
         columns = df.columns
         
-        X_range, y_range = self.column_info_to_range(self.columns_indices)
-        
+        X_range, y_range = self.column_info_to_range(self.columns_indices, list(columns) )
         X_cols = columns[X_range]
         y_cols = columns[y_range]
         
+        
         if self.make_split:
-            return train_test_split(df[X_cols].values, df[y_cols].values, test_size=0.3)
+            X_features = df[X_cols].sum(axis=1)
+            y_features = df[y_cols].sum(axis=1)
+            return train_test_split(X_features.to_list(), y_features.to_list(), test_size=0.3)
             
         else:
             df_train = df
             df_test = pd.read_csv(self.test_key)
-            return df_train[X_cols].values, df_test[X_cols].values, df_train[y_cols].values, df_test[y_cols].values
+            X_train = df_train[X_cols].sum(axis=1)
+            X_test = df_test[X_cols].sum(axis=1)
+            y_train = df_train[y_cols].sum(axis=1)
+            y_test = df_train[y_cols].sum(axis=1)
+            return X_train.to_list(), X_test.to_list(), y_train.to_list(), y_test.to_list()
     
 class ThirdFileDS(Dataset):
     
     source = "UPLOADED_FILE"
-    X_format = "TEXT"
-    y_format = "LIST"
         
     def preload(self, **kwargs):
         self.file = kwargs["key_train"]
@@ -126,16 +186,14 @@ class ThirdFileDS(Dataset):
 class DataFolderDS(Dataset):
     
     source = "DATA FOLDER"
-    X_format = "TEXT"
-    y_format = "LIST"
     
-    def preload(self, **kwargs):
+    def preload(self, **_):
         self.default_params["make_split"] = True
         
-    def setup(self, **kwargs):
-        self.key_train = f'data/{self.key_train}.csv'
+    def setup(self, **_):
+        self.key_train = f'data/{self.key_train}'
         if self.key_test:
-            self.key_test = f'data/{self.key_test}.csv'
+            self.key_test = f'data/{self.key_test}'
     
     def get_name(self):
         return self.key_train.split('.')[0]
@@ -151,27 +209,26 @@ class DataFolderDS(Dataset):
     def get_data(self):
         if self.loaded:
             return
+        
         split = self.get_pandas_data()
         self.update_data(*split)
+        self.labels = np.array(self.params["labels_names"]) if self.params["labels_names"] != None else [f"L{i+1}" for i in range(self.y_train[0])]
         self.loaded = True
 
 class HuggingFaceDS(Dataset):
     
     source = "HUGGINFACE_DATASETS"
-    X_format = "TEXT"
-    y_format = "LIST"
     df_obj = None
     
     def preload(self, **kwargs):
         self.split = kwargs["split"] if "split" in kwargs else "train"
-            
     
     def dataset_exists(self):
         res = requests.get(f"https://huggingface.co/datasets/{self.key}")
         return res.status_code == 200
 
     def get_columns(self):
-        if self.columns == None:
+        if type(self.columns) == type(None):
             header = datasets.load_dataset(self.key_train, split="train[:1]", trust_remote_code=True).to_pandas()
             self.columns = header.columns
         return self.columns
@@ -180,31 +237,37 @@ class HuggingFaceDS(Dataset):
         self.loaded = True
         
         columns = self.get_columns()
-        X_range, y_range = self.column_info_to_range(self.columns_indices)
+        X_range, y_range = self.column_info_to_range(self.columns_indices, list(columns) )
+        self.labels = np.array(self.params["labels_names"]) if self.params["labels_names"] != None else np.take(columns, y_range)
+        
         X_cols = columns[X_range]
         y_cols = columns[y_range]
         
         if self.make_split:
             df = datasets.load_dataset(self.key_train, split=self.split, trust_remote_code=True).to_pandas()
-            split = train_test_split(df[X_cols], df[y_cols], test_size=0.3)
+            split = train_test_split(df[X_cols].sum(axis=1).to_list(), df[y_cols].sum(axis=1).to_list(), test_size=0.3)
             self.update_data(*split)
             
         else:
             ds = datasets.load_dataset(self.key_train, trust_remote_code=True)
             df_train = ds["train"].to_pandas()  
             df_test = ds["test"].to_pandas()
-            self.update_data( df_train[X_cols], df_test[X_cols], df_train[self.y_cols], df_test[self.y_cols] )
+            self.update_data( df_train[X_cols].sum(axis=1).to_list(),
+                              df_test[ X_cols].sum(axis=1).to_list(),
+                              df_train[y_cols].sum(axis=1).to_list(),
+                              df_test[ y_cols].sum(axis=1).to_list())
 
 
 class SKMultilearnDS(Dataset):
     
     source = "SCIKIT_MULTILEARN"
-    X_format = "FREQ"
-    y_format = "BINARY"
     
     def setup(self, **kwargs):
         self.key = self.key_train
         self.variant = self.key_test if self.key_test else "train"
+        self.default_params["X_format"] = "FREQ"
+        self.default_params["y_format"] = "BINARY"
+    
         
     @staticmethod
     def get_avaiable_datasets():

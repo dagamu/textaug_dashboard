@@ -15,4 +15,4 @@ class CharAugmenter:
          self.augmenter = self.available_methods[kind](**params)
          
     def augment(self, *args):
-        self.augmenter.augment(*args)
+        return self.augmenter.augment(*args)

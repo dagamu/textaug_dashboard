@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from sklearn.preprocessing import MultiLabelBinarizer
 
 import streamlit as st
 from menu import menu
@@ -63,6 +64,8 @@ def DatasetReport(dataset, split):
     sum_tab, balance_tab, dataview_tab = st.tabs(["Summary", "Balance Measures", "Dataview"])     
     y_features = dataset.y_train if split == "Train" else dataset.y_test
     
+    mlb = MultiLabelBinarizer()
+    y_features = mlb.fit_transform(y_features)
     imbalance_report = create_imbalance_report(y_features)
         
     with balance_tab:

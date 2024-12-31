@@ -1,10 +1,16 @@
 import streamlit as st
 from cli_tools.parse_sesssion import read_default_session 
+from api.session import Session 
+
+LOAD_DEFAULT = True
 
 def menu():
     
     if not "session" in st.session_state:
-        st.session_state["session"] = read_default_session()
+        if LOAD_DEFAULT:
+            st.session_state["session"] = read_default_session()
+        else:
+            st.session_state["session"] = Session()
     
     st.sidebar.header("Text Augmentation Dashboard")
     st.sidebar.divider()

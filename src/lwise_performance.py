@@ -17,8 +17,8 @@ def get_performance( clf, X, y, prefix="", round_=-1, percentage=False ):
         f"{prefix}acc":          lwise_accuracy(y_features , y_pred ),
         f"{prefix}hl":           hamming_loss(y_features , y_pred),
         f"{prefix}precision":    precision_score(y_features, y_pred, zero_division=0 ,average="samples"),
-        f"{prefix}recall":       recall_score(y_features, y_pred, average="samples"),
-        f"{prefix}f1":           f1_score(y_features, y_pred, average="samples")
+        f"{prefix}recall":       recall_score(y_features, y_pred, zero_division=0, average="samples"),
+        f"{prefix}f1":           f1_score(y_features, y_pred, zero_division=0, average="samples")
     }
     
     if percentage:

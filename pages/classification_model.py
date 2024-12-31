@@ -3,8 +3,8 @@ from menu import menu
 
 def render_method(clf_manager, method, col_weights=[1,2]):
     del_col, label_col = st.columns(col_weights)
-    del_col.button("🗑", use_container_width=True, key=f"delbtn_{method.name}", on_click=lambda: clf_manager.del_method(method) )
-    label_col.button(f"⚙ {method.name}", key=f"config_{method.name}", use_container_width=False)
+    del_col.button("🗑", use_container_width=True, key=f"delbtn_{method.key}", on_click=lambda: clf_manager.del_method(method) )
+    label_col.button(f"⚙ {method.name}", key=f"config_{method.key}", use_container_width=False)
     
 def selected_models():
     clf_manager = st.session_state["session"].classification

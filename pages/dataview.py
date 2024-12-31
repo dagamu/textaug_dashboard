@@ -15,15 +15,18 @@ def make_df(X_features, y_features):
     max_x_cols = 6
     max_y_cols = 4
     
-    X_view = trunc_features(X_features, max_x_cols) if X_features.shape[1] > max_x_cols else X_features
-    y_view = trunc_features(y_features, max_y_cols) if y_features.shape[1] > max_y_cols else y_features
-    result_view = np.concatenate( (X_view, y_view), axis=1 )
-        
-    return pd.DataFrame(result_view, columns=list(range(result_view.shape[1])))
+    #X_view = trunc_features(X_features, max_x_cols) if X_features.shape[1] > max_x_cols else X_features
+    #y_view = trunc_features(y_features, max_y_cols) if y_features.shape[1] > max_y_cols else y_features
+    X_view = X_features
+    y_view = y_features
+    
+    result_view = zip(X_view, y_view)
+    return pd.DataFrame(result_view, columns=("Text", "Labels")) #list(range(result_view.shape[1]))
 
 def view_dataset(dataset, split):
     if not dataset.loaded:
         dataset.get_data()
+        st.text(f"{len(dataset.X_train)}, {len(dataset.y_train)}")
         
     if split == "Train":
         df = make_df(dataset.X_train, dataset.y_train)

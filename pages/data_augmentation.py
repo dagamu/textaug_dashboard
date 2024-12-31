@@ -107,7 +107,14 @@ def RenderAugMethods():
             st.warning("There is no augmentation methods selected.")
             
         for i, item in enumerate(aug_manager.items):
-            st.markdown(f"**[{i+1}] {item.name}**")
+            
+            metadata, actions = st.columns([6,1])
+            metadata.markdown(f"**[{i+1}] {item.name}**")
+            
+            if actions.button(label="🗑", type="primary", key=f"{item.name}{i}-DELBTN", use_container_width=True):
+                aug_manager.remove(item)
+                st.rerun()
+            
             if i < len(aug_manager.items) - 1:
                 st.divider()
             else:

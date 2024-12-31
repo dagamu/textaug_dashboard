@@ -64,7 +64,7 @@ class FormatLabels:
 
 class PreprocessingManager():
     def __init__(self):
-        self.actions = [FormatLabels()]
+        self.actions = [] #FormatLabels()
         
     def apply_to(self, dataset):
         for action in self.actions:

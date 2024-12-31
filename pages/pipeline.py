@@ -4,7 +4,7 @@ from menu import menu
 from pages.dataset_loading import loaded_datasets
 from pages.sampling import render_sampling_methods
 from pages.classification_model import selected_models
-from pages.data_augmentation import RenderAugMethods
+from pages.data_augmentation import RenderAugMethods, RenderAugSteps
 from api.pipeline.aug_report import make_report
 
 def PipelinePage():  
@@ -23,6 +23,7 @@ def PipelinePage():
     
     st.markdown("**Data Augmentation Methods**")
     RenderAugMethods()
+    RenderAugSteps()
     
 
     if st.button("Run"):

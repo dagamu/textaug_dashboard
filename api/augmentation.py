@@ -9,16 +9,16 @@ from src.tfmurlf import TfmurlfTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
 
 class AugSelectionMethod:
-    def get_aug_input(self, X_features, y_features):
-        return X_features, y_features
+    def get_aug_input(self, X_features, y_features, size):
+        data_size = len(X_features)
+        mask = np.zeros(data_size)
+        idx = np.random.choice( len(mask), size, replace= size > data_size)
+        mask[idx] = 1
+        return mask.astype(bool)
     
-class FullAugSelection(AugSelectionMethod):
-    
-    name = "Full Selection"
-    
-    def get_aug_input(self, X_features, y_features):
-        print("get_aug_input", X_features.shape, y_features.shape)
-        return X_features, y_features
+class RandomSelection(AugSelectionMethod):
+    name = "Random Selection"
+    key = "random"
 
 class AugmentationManager:
     
@@ -28,7 +28,7 @@ class AugmentationManager:
     }
     
     def __init__(self):
-        self.aug_selection_methods = [ FullAugSelection ]
+        self.aug_selection_methods = [ RandomSelection ]
         self.items = []
         self.steps = []
         self.step_kind = None
@@ -36,6 +36,9 @@ class AugmentationManager:
     def add_method(self, key, params):
         new_method = self.available_methods[key](**params)
         self.items.append(new_method)
+        
+    def remove(self, item):
+        self.items.remove(item)
         
     def set_steps(self, steps):
         self.steps = steps
@@ -45,17 +48,16 @@ class AugmentationManager:
         if n_samples == 0:
             return 
         
-        X_input, y_input = aug_choice.get_aug_input(dataset.X_train, dataset.y_train)
-        X_input = np.ravel(X_input).tolist()
-        augmented_samples = aug_method.augment(X_input)
-        y_new = np.array(y_input)
+        X_features = dataset.X_train
+        y_features = dataset.y_train
         
-        if np.all(dataset.X_aug != None)and len(dataset.y_aug):   
-            dataset.X_aug = np.concat( (dataset.X_aug, np.ravel(augmented_samples)) )
-            dataset.y_aug = np.vstack( (dataset.y_aug, y_new) )
-        else:
-            dataset.X_aug = np.array(augmented_samples)
-            dataset.y_aug = y_input
+        input_mask = aug_choice.get_aug_input(X_features, y_features, size=n_samples)
+        
+        text_input = np.array(X_features)[input_mask].tolist()
+        labels_input = np.array(y_features)[input_mask].tolist()
+        
+        dataset.X_aug += aug_method.augment(text_input)
+        dataset.y_aug += labels_input
             
     
 def calcSelectionWeights( text_col, labels_col, selection_method ):
