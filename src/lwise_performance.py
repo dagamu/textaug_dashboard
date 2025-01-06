@@ -25,6 +25,7 @@ def get_performance( clf, X, y, prefix="", round_=-1, percentage=False ):
         result = { key: value * 100 for key, value in result.items() }
         
     if round_ != -1:
-        result = { key: round(value, round_) for key, value in result.items() }
+        result = { key: round(value, round_) if value % 1 else int(value)
+                    for key, value in result.items() }
         
     return result

@@ -32,7 +32,7 @@ def custom_multiselect(label, default_value, key):
     
     kind_col, multi_select_col, val_col, btn_col = st.columns([1,4,1,1])
     
-    kind = kind_col.selectbox("Kind", ["%", "N°"], index=0, on_change=clear_items)
+    kind = kind_col.selectbox("Kind", ["%", "N°"], index=0, on_change=clear_items, key=f"{key}_kind")
     
     st.session_state["custom_ms_cache"][key] = multi_select_col.multiselect(label, current_items, current_items )
         

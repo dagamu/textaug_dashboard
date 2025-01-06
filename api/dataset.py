@@ -71,7 +71,8 @@ class Dataset:
                         "random_seed": 42,
                         "X_format": "TEXT",
                         "y_format": "LIST",
-                        "labels_names": []
+                        "labels_names": [],
+                        "name": None,
                       }
     
     def __init__(self, **kwargs):
@@ -84,7 +85,7 @@ class Dataset:
         self.make_split = self.params["make_split"]
         self.random_seed = self.params["random_seed"]
         
-        self.name = self.get_name()
+        self.name = self.params["name"] or self.get_name()
         self.setup(**kwargs)
         self.formatter = Formatter()
         self.labels_provided = "labels_names" in kwargs
@@ -95,8 +96,10 @@ class Dataset:
     def setup(self, **kwargs):
         pass
     
-    def full_train_data(self, mask=[]):
+    def mixed_data(self, mask=[]):
         if len(mask):
+            if len(mask) != len(self.X_train):
+                print(len(mask), len(self.X_train))
             X = [ x_ for i, x_ in enumerate(self.X_train) if mask[i] ] 
             y = [ y_ for i, y_ in enumerate(self.y_train) if mask[i] ] 
         else:
@@ -222,6 +225,9 @@ class HuggingFaceDS(Dataset):
     
     def preload(self, **kwargs):
         self.split = kwargs["split"] if "split" in kwargs else "train"
+        
+    def get_name(self):
+        return self.key_train.split('/')[1]
     
     def dataset_exists(self):
         res = requests.get(f"https://huggingface.co/datasets/{self.key}")

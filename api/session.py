@@ -3,7 +3,8 @@ from api.preprocessing import PreprocessingManager
 from api.classification import ClassificationManager
 from api.sampling import SamplingManager
 from api.augmentation import AugmentationManager
-from api.pipeline.runner import PipelineRunner
+from api.runner import PipelineRunner
+from api.report import ReportGenerator
 
 class Session():
     def __init__(self):
@@ -13,6 +14,7 @@ class Session():
         self.classification = ClassificationManager()
         self.aug_manager = AugmentationManager()
         self.runner = PipelineRunner(self)
+        self.report = ReportGenerator(self)
         
     def apply_preprocessing(self, dataset):
         for df in self.datasets.items:
@@ -20,5 +22,5 @@ class Session():
                 self.preprocessing.apply_to(dataset)
                 
     def pipeline_run(self, update_fn):
-        self.runner.run(update_fn)
+        return self.runner.run(update_fn)
         

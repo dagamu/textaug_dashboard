@@ -8,7 +8,7 @@ def uniform_crossover( parentA, parentB ):
 
 class GeneticSampler:
   
-  def __init__(self, pob_size, crossover):
+  def __init__(self, pob_size, crossover=uniform_crossover):
     self.pob = []
     self.pob_size = pob_size
     self.crossover = crossover

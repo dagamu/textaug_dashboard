@@ -10,21 +10,21 @@ class TextRepresentationMethod:
     kind = "text_representation"
     def __init__(self, base, key):
         self.base = base
-        self.name = type(base).__name__
+        self.name = base.__name__
         self.key = key
         
 class ClassificationModel:
     kind = "classification_model"
     def __init__(self, base, key):
         self.base = base
-        self.name = type(base).__name__
+        self.name = base.__name__
         self.key = key
         
 class ProblemTransformation:
     kind = "problem_transformation"
     def __init__(self, base, key):
         self.base = base
-        self.name = type(base).__name__
+        self.name = base.__name__
         self.key = key
 
 class ClassificationManager:
